@@ -1,0 +1,17 @@
+@startuml
+title Sequence: Delivery Assignment (consumer-driven)
+
+participant "Order Service" as Order
+participant "Kafka" as Kafka
+participant "Delivery Service" as Delivery
+participant "Notification Service" as Notify
+
+Order -> Kafka : publish orders.created
+Kafka -> Delivery : event delivery
+Delivery -> Delivery : compute assignment (closest rider)
+Delivery -> MySQL : create delivery record + status=ASSIGNED
+Delivery -> Kafka : publish delivery.assigned {orderId, riderId}
+Kafka -> Notify : notify rider and customer
+Notify -> User : push notification / SMS
+
+@enduml

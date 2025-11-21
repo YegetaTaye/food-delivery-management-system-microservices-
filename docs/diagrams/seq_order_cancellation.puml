@@ -1,0 +1,23 @@
+@startuml
+title Sequence: Cancel Order (compensation / event)
+
+actor Client
+participant "API Gateway" as Gateway
+participant "Order Service" as Order
+participant "Payment Service" as Payment
+participant "Kafka" as Kafka
+participant "Product Service" as Product
+
+Client -> Gateway : POST /orders/:id/cancel
+Gateway -> Order : POST /cancel
+Order -> Kafka : publish orders.cancellation_requested
+Kafka -> Payment : Payment Service consumes -> issues refund if paid
+Payment -> External : refund (mock)
+Payment -> Kafka : publish payments.refunded
+Kafka -> Product : publish inventory.restore (to return reserved stock)
+Product -> MySQL : update stock
+Order -> MySQL : update order status = CANCELLED
+Order --> Gateway : 200 OK
+Gateway --> Client : 200 OK
+
+@enduml

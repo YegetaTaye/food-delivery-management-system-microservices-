@@ -1,0 +1,54 @@
+@startuml
+title Deployment Diagram — Kubernetes / Docker Compose view
+
+node "Kubernetes Cluster" {
+  folder "Namespace: food-delivery" {
+    cloud "Ingress (Nginx)" as Ingress
+    [API Gateway Pod (replicas=2)] as GatewayPod
+    [User Service Pod (replicas=2)] as UserPod
+    [Product Service Pod (replicas=2)] as ProductPod
+    [Cart Service Pod (replicas=2)] as CartPod
+    [Order Service Pod (replicas=3)] as OrderPod
+    [Payment Service Pod (replicas=2)] as PaymentPod
+    [Delivery Service Pod (replicas=2)] as DeliveryPod
+    [Notification Pod (replicas=1)] as NotifyPod
+    [Analytics Pod (replicas=1)] as AnalyticsPod
+    [Kafka Broker(s)] as KafkaPod
+  }
+}
+
+node "Managed DB Node" {
+  database "MySQL Primary (PV)" as MySQL
+  database "Redis (cache)" as Redis
+}
+
+node "External" {
+  [External Payment Provider] as PaymentGW
+  [User Clients: Web / Mobile] as Clients
+}
+
+Clients --> Ingress : HTTPS
+Ingress --> GatewayPod : route / auth / rate-limit
+
+GatewayPod --> UserPod
+GatewayPod --> ProductPod
+GatewayPod --> CartPod
+GatewayPod --> OrderPod
+GatewayPod --> PaymentPod
+
+OrderPod --> KafkaPod : publish orders.created
+PaymentPod --> KafkaPod : publish payments.completed
+KafkaPod --> DeliveryPod : events
+KafkaPod --> NotifyPod : events
+KafkaPod --> AnalyticsPod : events
+
+PaymentPod --> PaymentGW : external API (mockable)
+
+KafkaPod --> Redis : optional stream processing (or cache updates)
+
+MySQL <-- UserPod
+MySQL <-- ProductPod
+MySQL <-- OrderPod
+Redis <-- CartPod
+
+@enduml

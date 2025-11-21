@@ -1,0 +1,51 @@
+@startuml
+hide stereotype
+
+title Component Diagram — Food Delivery (Logical)
+
+package "Edge" {
+  [Client (Web/Mobile)] as Client
+  [API Gateway / Auth] as Gateway
+}
+
+package "Services" {
+  rectangle "User Service\n(owns users DB)" as User
+  rectangle "Product Service\n(owns product DB)" as Product
+  rectangle "Cart Service\n(owns cart DB / redis cache)" as Cart
+  rectangle "Order Service\n(owns orders DB)" as Order
+  rectangle "Payment Service\n(owns payment ledger)" as Payment
+  rectangle "Delivery Service\n(owns delivery DB)" as Delivery
+  rectangle "Notification Service\n(stateless / sends messages)" as Notify
+  rectangle "Analytics Service\n(consumes events)" as Analytics
+}
+
+database "MySQL (Users, Products, Orders...)" as MySQL
+database "Redis (caching, sessions)" as Redis
+cloud "Kafka Cluster" as Kafka
+
+Client --> Gateway : "HTTPS (REST)"
+Gateway --> User : "REST: /users/*"
+Gateway --> Product : "REST: /products/*"
+Gateway --> Cart : "REST: /cart/*"
+Gateway --> Order : "REST: /orders/*"
+Gateway --> Payment : "REST: /payments/*"
+
+' synchronous flows
+Order --> Product : "REST: check availability"
+Order --> Cart : "REST: fetch cart"
+
+' event flows (publish-subscribe)
+Order -[#0000FF,dashed]-> Kafka : "orders.created"
+Payment -[#0000FF,dashed]-> Kafka : "payments.completed"
+Delivery -[#0000FF,dashed]-> Kafka : "delivery.status.updated"
+
+Kafka -[#0000FF,dashed]-> Delivery : "orders.created"
+Kafka -[#0000FF,dashed]-> Notify : "orders.created, payments.completed, delivery.*"
+Kafka -[#0000FF,dashed]-> Analytics : "orders.*, payments.*"
+
+User --> MySQL : "read / write"
+Product --> MySQL : "read / write"
+Order --> MySQL : "read / write"
+Cart --> Redis : "cache / session"
+
+@enduml

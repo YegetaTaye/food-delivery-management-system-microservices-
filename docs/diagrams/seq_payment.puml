@@ -1,0 +1,26 @@
+@startuml
+title Sequence: Process Payment (with idempotency key)
+
+actor Client
+participant "API Gateway" as Gateway
+participant "Payment Service" as Payment
+participant "Order Service" as Order
+participant "Kafka" as Kafka
+participant "External Payment GW" as PGW
+
+Client -> Gateway : POST /payments {orderId, card, idempotencyKey}
+Gateway -> Payment : POST /payments
+Payment -> Order : GET /orders/:id (verify status == PENDING)
+Order --> Payment : PENDING
+Payment -> Payment : check idempotency store (if exists -> return)
+Payment -> PGW : charge (mock)
+PGW --> Payment : success/failed
+Payment -> MySQL : record payment (idempotent)
+Payment -> Kafka : publish payments.completed {orderId, paymentId, status}
+Kafka -> Order : Order service consumes, updates status -> PAID
+Order -> MySQL : update order status = CONFIRMED
+Kafka -> Notify : send payment confirmation
+Payment --> Gateway : 200 OK
+Gateway --> Client : 200 OK
+
+@enduml

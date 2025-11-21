@@ -1,0 +1,28 @@
+@startuml
+title Sequence: Create Order (happy path)
+
+actor Client
+participant "API Gateway" as Gateway
+participant "User Service" as User
+participant "Cart Service" as Cart
+participant "Order Service" as Order
+participant "Product Service" as Product
+participant "Kafka" as Kafka
+participant "Notification Service" as Notify
+
+Client -> Gateway : POST /orders {cartId, paymentMethod}
+Gateway -> User : Validate token (optional)
+Gateway -> Cart : GET /cart/:user
+Cart --> Gateway : cart items
+Gateway -> Order : POST /orders (cart payload)
+Order -> Product : Verify inventory (sync)
+Product --> Order : OK / reserve
+Order -> MySQL : create order row (status=PENDING)
+Order -> Kafka : publish orders.created {orderId, items, total}
+Kafka -> Delivery : (subscriber) receives event
+Kafka -> Notify : receives event
+Notify -> User : send order confirmation (or log)
+Order --> Gateway : 201 Created {orderId}
+Gateway --> Client : 201 Created
+
+@enduml
