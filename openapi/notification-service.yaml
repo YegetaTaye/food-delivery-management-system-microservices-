@@ -1,0 +1,43 @@
+openapi: 3.0.3
+info:
+  title: Notification Service API
+  version: "1.0.0"
+  description: Sends user notifications based on system events.
+servers:
+  - url: http://localhost:4600
+  - url: https://notify.api.example.com
+
+tags:
+  - name: notify
+
+components:
+  schemas:
+    NotificationRequest:
+      type: object
+      required: [userId, type, channel, payload]
+      properties:
+        userId: { type: string }
+        type: { type: string }
+        channel:
+          type: string
+          enum: [EMAIL, SMS, PUSH]
+        payload:
+          type: object
+          additionalProperties: true
+
+paths:
+  /notify:
+    post:
+      tags: [notify]
+      summary: Manually trigger notification (admin/testing)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/NotificationRequest" }
+      responses:
+        "200":
+          description: Notification sent
+      x-events:
+        publishes:
+          - topic: notifications.send

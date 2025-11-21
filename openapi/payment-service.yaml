@@ -1,0 +1,114 @@
+openapi: 3.0.3
+info:
+  title: Payment Service API
+  version: "1.0.0"
+  description: |
+    Handles payment processing. Supports idempotency via an Idempotency-Key header.
+    Publishes `payments.completed` (or failed) to Kafka after processing.
+servers:
+  - url: https://payments.api.example.com
+  - url: http://localhost:4200
+
+tags:
+  - name: payments
+    description: Payment processing
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    PaymentRequest:
+      type: object
+      required: [orderId, amount, method]
+      properties:
+        orderId:
+          type: string
+        amount:
+          type: number
+        method:
+          type: string
+          example: CARD
+        card:
+          type: object
+          properties:
+            number:
+              type: string
+            expMonth:
+              type: integer
+            expYear:
+              type: integer
+            cvv:
+              type: string
+    PaymentResponse:
+      type: object
+      properties:
+        paymentId:
+          type: string
+        status:
+          type: string
+          enum: [PENDING, SUCCESS, FAILED]
+        amount:
+          type: number
+
+security:
+  - bearerAuth: []
+
+paths:
+  /payments:
+    post:
+      tags: [payments]
+      summary: Process a payment for an order
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: header
+          name: Idempotency-Key
+          required: false
+          schema:
+            type: string
+          description: "Idempotency key to avoid duplicate charges. Store server-side."
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PaymentRequest"
+      responses:
+        "200":
+          description: Payment processed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PaymentResponse"
+        "402":
+          description: Payment required / failed
+      x-events:
+        publishes:
+          - topic: payments.completed
+            description: "Schema in /events/payments.completed.v1.json"
+
+  /payments/{paymentId}:
+    get:
+      tags: [payments]
+      summary: Get payment status / details
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: paymentId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Payment record
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PaymentResponse"
+        "404":
+          description: Not found

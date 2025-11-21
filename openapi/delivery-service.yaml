@@ -1,0 +1,72 @@
+openapi: 3.0.3
+info:
+  title: Delivery Service API
+  version: "1.0.0"
+  description: Handles delivery assignment and live tracking.
+servers:
+  - url: http://localhost:4500
+  - url: https://delivery.api.example.com
+
+tags:
+  - name: delivery
+
+components:
+  schemas:
+    Delivery:
+      type: object
+      properties:
+        id: { type: string }
+        orderId: { type: string }
+        riderId: { type: string }
+        status:
+          type: string
+          enum: [ASSIGNED, PICKED_UP, OUT_FOR_DELIVERY, DELIVERED]
+        etaMinutes: { type: integer }
+        location:
+          type: object
+          properties:
+            lat: { type: number }
+            lng: { type: number }
+
+paths:
+  /deliveries/{orderId}:
+    get:
+      tags: [delivery]
+      summary: Get delivery info by orderId
+      parameters:
+        - in: path
+          name: orderId
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Delivery info
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Delivery" }
+        "404": { description: Not found }
+
+  /deliveries/{orderId}/status:
+    patch:
+      tags: [delivery]
+      summary: Update delivery status
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                status:
+                  type: string
+                  enum: [PICKED_UP, OUT_FOR_DELIVERY, DELIVERED]
+                location:
+                  type: object
+                  properties:
+                    lat: { type: number }
+                    lng: { type: number }
+      responses:
+        "200": { description: Updated }
+      x-events:
+        publishes:
+          - topic: delivery.status.updated

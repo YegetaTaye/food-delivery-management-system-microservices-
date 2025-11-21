@@ -1,0 +1,218 @@
+openapi: 3.0.3
+info:
+  title: Order Service API
+  version: "1.0.0"
+  description: |
+    Order management API. Creates orders, updates order status, and exposes read endpoints.
+    Important: On create, the service publishes an event `orders.created` to Kafka.
+servers:
+  - url: https://orders.api.example.com
+    description: Production
+  - url: http://localhost:4100
+    description: Local
+
+tags:
+  - name: orders
+    description: Order lifecycle operations
+  - name: events
+    description: Event-related documentation
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    OrderItem:
+      type: object
+      required: [productId, qty, price]
+      properties:
+        productId:
+          type: string
+        qty:
+          type: integer
+          minimum: 1
+        price:
+          type: number
+          format: float
+    CreateOrderRequest:
+      type: object
+      required: [userId, items, total]
+      properties:
+        userId:
+          type: string
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/OrderItem'
+        total:
+          type: number
+          format: float
+        paymentMethod:
+          type: string
+          example: CARD
+    Order:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        userId:
+          type: string
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/OrderItem'
+        total:
+          type: number
+        status:
+          type: string
+          enum: [PENDING, CONFIRMED, PAID, PREPARING, ASSIGNED, OUT_FOR_DELIVERY, DELIVERED, CANCELLED]
+        createdAt:
+          type: string
+          format: date-time
+
+security:
+  - bearerAuth: []
+
+paths:
+  /orders:
+    post:
+      tags: [orders]
+      summary: Create an order (publishes orders.created)
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateOrderRequest'
+      responses:
+        '201':
+          description: Order created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Order'
+        '400':
+          description: Validation error
+      x-events:
+        publishes:
+          - topic: orders.created
+            description: "Schema in /events/orders.created.v1.json"
+    get:
+      tags: [orders]
+      summary: Search orders (filter by userId/status)
+      parameters:
+        - in: query
+          name: userId
+          schema:
+            type: string
+        - in: query
+          name: status
+          schema:
+            type: string
+      responses:
+        '200':
+          description: List of orders
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Order'
+
+  /orders/{orderId}:
+    get:
+      tags: [orders]
+      summary: Get order by id
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: orderId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Order object
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Order'
+        '404':
+          description: Not found
+    patch:
+      tags: [orders]
+      summary: Update order status (partial)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: orderId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                status:
+                  type: string
+                  enum: [PENDING, CONFIRMED, PAID, PREPARING, ASSIGNED, OUT_FOR_DELIVERY, DELIVERED, CANCELLED]
+      responses:
+        '200':
+          description: Updated order
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Order'
+      x-events:
+        publishes:
+          - topic: orders.status.updated
+            description: "Emitted when status changes"
+
+  /orders/{orderId}/cancel:
+    post:
+      tags: [orders]
+      summary: Request cancellation; triggers compensating events (refunds, stock restore)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: orderId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Cancellation accepted (async processes may follow)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: CANCELLED_PENDING
+        '400':
+          description: Cannot cancel (already delivered etc.)
+
+components:
+  parameters:
+    OrderIdParam:
+      name: orderId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+

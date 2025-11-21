@@ -1,0 +1,99 @@
+openapi: 3.0.3
+info:
+  title: Cart Service API
+  version: "1.0.0"
+  description: |
+    Manages user shopping carts and updates totals.
+servers:
+  - url: http://localhost:4400
+  - url: https://cart.api.example.com
+
+tags:
+  - name: cart
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+
+  schemas:
+    CartItem:
+      type: object
+      properties:
+        productId: { type: string }
+        qty: { type: integer }
+
+    Cart:
+      type: object
+      properties:
+        userId: { type: string }
+        items:
+          type: array
+          items: { $ref: "#/components/schemas/CartItem" }
+        total: { type: number }
+
+paths:
+  /cart:
+    get:
+      tags: [cart]
+      summary: Get authenticated user's cart
+      security: [{ bearerAuth: [] }]
+      responses:
+        "200":
+          description: User cart
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Cart" }
+
+    put:
+      tags: [cart]
+      summary: Replace entire cart
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                items:
+                  type: array
+                  items: { $ref: "#/components/schemas/CartItem" }
+      responses:
+        "200": { description: Updated cart }
+      x-events:
+        publishes:
+          - topic: cart.updated
+
+  /cart/items:
+    post:
+      tags: [cart]
+      summary: Add item to cart
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CartItem" }
+      responses:
+        "200": { description: Item added }
+      x-events:
+        publishes:
+          - topic: cart.updated
+
+  /cart/items/{productId}:
+    delete:
+      tags: [cart]
+      summary: Remove product from cart
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - in: path
+          name: productId
+          schema: { type: string }
+          required: true
+      responses:
+        "200": { description: Item removed }
+      x-events:
+        publishes:
+          - topic: cart.updated
