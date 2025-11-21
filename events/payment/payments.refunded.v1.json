@@ -1,0 +1,12 @@
+{
+  "eventId": "uuid",
+  "version": 1,
+  "timestamp": "2025-11-21T12:15:00Z",
+  "source": "payment-service",
+  "refundId": "string",
+  "paymentId": "string",
+  "orderId": "string",
+  "amount": 0,
+  "reason": "ORDER_CANCELLED",
+  "traceId": "string"
+}

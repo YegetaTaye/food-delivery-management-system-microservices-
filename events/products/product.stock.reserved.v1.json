@@ -1,0 +1,14 @@
+{
+  "eventId": "uuid",
+  "version": 1,
+  "timestamp": "2025-11-21T12:01:00Z",
+  "source": "product-service",
+  "orderId": "string",
+  "items": [
+    {
+      "productId": "string",
+      "qty": 0
+    }
+  ],
+  "traceId": "string"
+}

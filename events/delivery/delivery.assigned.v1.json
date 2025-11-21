@@ -1,0 +1,11 @@
+{
+  "eventId": "uuid",
+  "version": 1,
+  "timestamp": "2025-11-21T12:20:00Z",
+  "source": "delivery-service",
+  "deliveryId": "string",
+  "orderId": "string",
+  "riderId": "string",
+  "etaMinutes": 0,
+  "traceId": "string"
+}

@@ -1,0 +1,15 @@
+{
+  "eventId": "uuid",
+  "version": 1,
+  "timestamp": "2025-11-21T12:30:00Z",
+  "source": "delivery-service",
+  "deliveryId": "string",
+  "orderId": "string",
+  "oldStatus": "ASSIGNED",
+  "newStatus": "OUT_FOR_DELIVERY",
+  "location": {
+    "lat": 0,
+    "lng": 0
+  },
+  "traceId": "string"
+}

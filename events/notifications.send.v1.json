@@ -1,0 +1,15 @@
+{
+  "eventId": "uuid",
+  "version": 1,
+  "timestamp": "2025-11-21T12:40:00Z",
+  "source": "notification-service",
+  "notificationId": "string",
+  "userId": "string",
+  "channel": "EMAIL",
+  "type": "ORDER_CONFIRMATION",
+  "payload": {
+    "subject": "string",
+    "message": "string"
+  },
+  "traceId": "string"
+}

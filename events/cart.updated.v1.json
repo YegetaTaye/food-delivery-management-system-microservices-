@@ -1,0 +1,15 @@
+{
+  "eventId": "uuid",
+  "version": 1,
+  "timestamp": "2025-11-21T12:02:00Z",
+  "source": "cart-service",
+  "userId": "string",
+  "items": [
+    {
+      "productId": "string",
+      "qty": 1
+    }
+  ],
+  "total": 0,
+  "traceId": "string"
+}

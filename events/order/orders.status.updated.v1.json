@@ -1,0 +1,10 @@
+{
+  "eventId": "uuid",
+  "version": 1,
+  "timestamp": "2025-11-21T12:05:00Z",
+  "source": "order-service",
+  "orderId": "string",
+  "oldStatus": "PENDING",
+  "newStatus": "CONFIRMED",
+  "traceId": "string"
+}
