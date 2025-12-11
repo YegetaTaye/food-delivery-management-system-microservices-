@@ -1,10 +1,9 @@
 apiVersion: apps/v1
-kind: StatefulSet
+kind: Deployment
 metadata:
   name: user-db
   namespace: dev
 spec:
-  serviceName: "user-db"
   replicas: 1
   selector:
     matchLabels:
@@ -40,11 +39,9 @@ spec:
           volumeMounts:
             - name: mysql-data
               mountPath: /var/lib/mysql
-  volumeClaimTemplates:
-    - metadata:
-        name: mysql-data
-      spec:
-        accessModes: ["ReadWriteOnce"]
-        resources:
-          requests:
-            storage: 1Gi
+          imagePullPolicy: IfNotPresent
+      volumes:
+        - name: mysql-data
+          hostPath:
+            path: /tmp/k3d-mysql-data
+            type: DirectoryOrCreate

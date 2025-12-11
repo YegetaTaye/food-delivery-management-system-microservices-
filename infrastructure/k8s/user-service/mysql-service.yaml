@@ -3,8 +3,8 @@ kind: Service
 metadata:
   name: user-db
   namespace: dev
-labels:
-  app: user-db
+  labels:
+    app: user-db
 spec:
   ports:
     - port: 3306
