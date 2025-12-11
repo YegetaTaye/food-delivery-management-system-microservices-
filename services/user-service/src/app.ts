@@ -33,7 +33,7 @@ class App {
     this.app.use(express.urlencoded({ extended: true }));
     
     // Request logging
-    this.app.use((req: Request, res: Response, next) => {
+    this.app.use((req: Request, _res: Response, next) => {
       logger.info(`${req.method} ${req.path}`, {
         ip: req.ip,
         userAgent: req.get('user-agent'),

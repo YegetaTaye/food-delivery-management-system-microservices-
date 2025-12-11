@@ -2,6 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: rabbitmq
+  namespace: dev
   labels:
     app: rabbitmq
 spec:
@@ -18,8 +19,8 @@ spec:
         - name: rabbitmq
           image: rabbitmq:3-management
           ports:
-            - containerPort: 5672
-            - containerPort: 15672
+            - containerPort: 5672 # AMQP
+            - containerPort: 15672 # Management UI
           env:
             - name: RABBITMQ_DEFAULT_USER
               value: admin
