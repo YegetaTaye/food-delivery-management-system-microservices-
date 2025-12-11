@@ -5,6 +5,8 @@ import swaggerUi from 'swagger-ui-express';
 import { swaggerSpec } from './config/swagger';
 import { errorHandler } from './middlewares/error.middleware';
 import healthRoute from './routes/health.route';
+import userRoutes from './routes/user.routes';
+import authRoutes from './routes/auth.routes';
 import logger from './utils/logger';
 import { config } from './config/env';
 import fs from 'fs';
@@ -22,8 +24,17 @@ class App {
   }
 
   private initializeMiddlewares(): void {
-    // Security middleware
-    this.app.use(helmet());
+    // Security middleware - Configure helmet to allow Swagger UI
+    this.app.use(helmet({
+      contentSecurityPolicy: {
+        directives: {
+          defaultSrc: ["'self'"],
+          styleSrc: ["'self'", "'unsafe-inline'"],
+          scriptSrc: ["'self'", "'unsafe-inline'"],
+          imgSrc: ["'self'", "data:", "https:"],
+        },
+      },
+    }));
     
     // CORS middleware
     this.app.use(cors());
@@ -33,7 +44,7 @@ class App {
     this.app.use(express.urlencoded({ extended: true }));
     
     // Request logging
-    this.app.use((req: Request, res: Response, next) => {
+    this.app.use((req: Request, _res: Response, next) => {
       logger.info(`${req.method} ${req.path}`, {
         ip: req.ip,
         userAgent: req.get('user-agent'),
@@ -45,6 +56,10 @@ class App {
   private initializeRoutes(): void {
     // Health check route
     this.app.use('/', healthRoute);
+    
+    // API routes
+    this.app.use('/api/auth', authRoutes);
+    this.app.use('/api/users', userRoutes);
     
     // Swagger documentation
     this.app.use('/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
