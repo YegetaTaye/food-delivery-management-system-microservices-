@@ -17,6 +17,14 @@ const swaggerOptions: swaggerJsdoc.Options = {
       { name: 'Health', description: 'Health check endpoint' },
     ],
     components: {
+      securitySchemes: {
+        bearerAuth: {
+          type: 'http',
+          scheme: 'bearer',
+          bearerFormat: 'JWT',
+          description: 'Enter JWT token from user service',
+        },
+      },
       schemas: {
         Category: {
           type: 'object',

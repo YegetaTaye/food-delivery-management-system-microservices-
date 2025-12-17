@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { validate } from '../middlewares/validate.middleware';
+import { authenticate } from '../middlewares/auth.middleware';
 import { createCategorySchema, updateCategorySchema } from '../validations';
 import {
   getAllCategories,
@@ -82,7 +83,9 @@ router.get('/:id', getCategoryById);
  *   post:
  *     tags: [Categories]
  *     summary: Create a new category
- *     description: Create a new category for menu items
+ *     description: Create a new category for menu items (requires authentication)
+ *     security:
+ *       - bearerAuth: []
  *     requestBody:
  *       required: true
  *       content:
@@ -104,10 +107,12 @@ router.get('/:id', getCategoryById);
  *                   $ref: '#/components/schemas/Category'
  *       400:
  *         $ref: '#/components/responses/BadRequest'
+ *       401:
+ *         description: Unauthorized - Invalid or missing token
  *       409:
  *         $ref: '#/components/responses/Conflict'
  */
-router.post('/', validate(createCategorySchema), createCategory);
+router.post('/', authenticate, validate(createCategorySchema), createCategory);
 
 /**
  * @swagger
@@ -115,7 +120,9 @@ router.post('/', validate(createCategorySchema), createCategory);
  *   put:
  *     tags: [Categories]
  *     summary: Update a category
- *     description: Update an existing category
+ *     description: Update an existing category (requires authentication)
+ *     security:
+ *       - bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: id
@@ -145,10 +152,12 @@ router.post('/', validate(createCategorySchema), createCategory);
  *                   $ref: '#/components/schemas/Category'
  *       400:
  *         $ref: '#/components/responses/BadRequest'
+ *       401:
+ *         description: Unauthorized - Invalid or missing token
  *       404:
  *         $ref: '#/components/responses/NotFound'
  */
-router.put('/:id', validate(updateCategorySchema), updateCategory);
+router.put('/:id', authenticate, validate(updateCategorySchema), updateCategory);
 
 /**
  * @swagger
@@ -156,7 +165,9 @@ router.put('/:id', validate(updateCategorySchema), updateCategory);
  *   delete:
  *     tags: [Categories]
  *     summary: Delete a category
- *     description: Delete a category (only if it has no menu items)
+ *     description: Delete a category (only if it has no menu items, requires authentication)
+ *     security:
+ *       - bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: id
@@ -174,9 +185,11 @@ router.put('/:id', validate(updateCategorySchema), updateCategory);
  *           application/json:
  *             schema:
  *               $ref: '#/components/schemas/ErrorResponse'
+ *       401:
+ *         description: Unauthorized - Invalid or missing token
  *       404:
  *         $ref: '#/components/responses/NotFound'
  */
-router.delete('/:id', deleteCategory);
+router.delete('/:id', authenticate, deleteCategory);
 
 export default router;

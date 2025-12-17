@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { validate } from '../middlewares/validate.middleware';
+import { authenticate } from '../middlewares/auth.middleware';
 import { createMenuItemSchema, updateMenuItemSchema, stockUpdateSchema } from '../validations';
 import {
   getAllMenuItems,
@@ -89,7 +90,9 @@ router.get('/:id', getMenuItemById);
  *   post:
  *     tags: [Menu Items]
  *     summary: Create a new menu item
- *     description: Create a new menu item in a category
+ *     description: Create a new menu item in a category (requires authentication)
+ *     security:
+ *       - bearerAuth: []
  *     requestBody:
  *       required: true
  *       content:
@@ -111,6 +114,8 @@ router.get('/:id', getMenuItemById);
  *                   $ref: '#/components/schemas/MenuItem'
  *       400:
  *         $ref: '#/components/responses/BadRequest'
+ *       401:
+ *         description: Unauthorized - Invalid or missing token
  *       404:
  *         description: Category not found
  *         content:
@@ -118,7 +123,7 @@ router.get('/:id', getMenuItemById);
  *             schema:
  *               $ref: '#/components/schemas/ErrorResponse'
  */
-router.post('/', validate(createMenuItemSchema), createMenuItem);
+router.post('/', authenticate, validate(createMenuItemSchema), createMenuItem);
 
 /**
  * @swagger
@@ -126,7 +131,9 @@ router.post('/', validate(createMenuItemSchema), createMenuItem);
  *   put:
  *     tags: [Menu Items]
  *     summary: Update a menu item
- *     description: Update an existing menu item
+ *     description: Update an existing menu item (requires authentication)
+ *     security:
+ *       - bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: id
@@ -156,10 +163,12 @@ router.post('/', validate(createMenuItemSchema), createMenuItem);
  *                   $ref: '#/components/schemas/MenuItem'
  *       400:
  *         $ref: '#/components/responses/BadRequest'
+ *       401:
+ *         description: Unauthorized - Invalid or missing token
  *       404:
  *         $ref: '#/components/responses/NotFound'
  */
-router.put('/:id', validate(updateMenuItemSchema), updateMenuItem);
+router.put('/:id', authenticate, validate(updateMenuItemSchema), updateMenuItem);
 
 /**
  * @swagger
@@ -167,7 +176,9 @@ router.put('/:id', validate(updateMenuItemSchema), updateMenuItem);
  *   delete:
  *     tags: [Menu Items]
  *     summary: Delete a menu item
- *     description: Delete a menu item from the system
+ *     description: Delete a menu item from the system (requires authentication)
+ *     security:
+ *       - bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: id
@@ -179,10 +190,12 @@ router.put('/:id', validate(updateMenuItemSchema), updateMenuItem);
  *     responses:
  *       204:
  *         description: Menu item deleted successfully
+ *       401:
+ *         description: Unauthorized - Invalid or missing token
  *       404:
  *         $ref: '#/components/responses/NotFound'
  */
-router.delete('/:id', deleteMenuItem);
+router.delete('/:id', authenticate, deleteMenuItem);
 
 /**
  * @swagger
@@ -190,7 +203,9 @@ router.delete('/:id', deleteMenuItem);
  *   post:
  *     tags: [Stock]
  *     summary: Reserve stock for an order
- *     description: Decrease stock quantity for multiple menu items (used when order is placed)
+ *     description: Decrease stock quantity for multiple menu items (used when order is placed, requires authentication)
+ *     security:
+ *       - bearerAuth: []
  *     requestBody:
  *       required: true
  *       content:
@@ -223,10 +238,12 @@ router.delete('/:id', deleteMenuItem);
  *           application/json:
  *             schema:
  *               $ref: '#/components/schemas/ErrorResponse'
+ *       401:
+ *         description: Unauthorized - Invalid or missing token
  *       404:
  *         $ref: '#/components/responses/NotFound'
  */
-router.post('/stock/reserve', validate(stockUpdateSchema), reserveStock);
+router.post('/stock/reserve', authenticate, validate(stockUpdateSchema), reserveStock);
 
 /**
  * @swagger
@@ -234,7 +251,9 @@ router.post('/stock/reserve', validate(stockUpdateSchema), reserveStock);
  *   post:
  *     tags: [Stock]
  *     summary: Release reserved stock
- *     description: Increase stock quantity for multiple menu items (used when order is cancelled)
+ *     description: Increase stock quantity for multiple menu items (used when order is cancelled, requires authentication)
+ *     security:
+ *       - bearerAuth: []
  *     requestBody:
  *       required: true
  *       content:
@@ -263,7 +282,9 @@ router.post('/stock/reserve', validate(stockUpdateSchema), reserveStock);
  *                   example: Stock released
  *       400:
  *         $ref: '#/components/responses/BadRequest'
+ *       401:
+ *         description: Unauthorized - Invalid or missing token
  */
-router.post('/stock/release', validate(stockUpdateSchema), releaseStock);
+router.post('/stock/release', authenticate, validate(stockUpdateSchema), releaseStock);
 
 export default router;
