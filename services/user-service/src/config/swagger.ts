@@ -18,6 +18,17 @@ const swaggerOptions: swaggerJsdoc.Options = {
         description: 'Development server',
       },
     ],
+    components: {
+      securitySchemes: {
+        BearerAuth: {
+          type: 'http',
+          scheme: 'bearer',
+          bearerFormat: 'JWT',
+          description: 'Enter your JWT token in the format: your-token-here (without Bearer prefix)'
+        }
+      }
+    },
+    security: []
   },
   apis: ['./src/routes/*.ts', './dist/routes/*.js'], // Support both TS and compiled JS
 };

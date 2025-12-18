@@ -13,6 +13,9 @@ RUN npm ci
 # Copy source code
 COPY . .
 
+# Generate Prisma Client
+RUN npx prisma generate
+
 # Build TypeScript
 RUN npm run build
 
@@ -28,8 +31,14 @@ COPY package*.json ./
 # Install production dependencies only
 RUN npm ci --only=production
 
+# Generate Prisma Client for production
+RUN npx prisma generate
+
 # Copy built files from builder
 COPY --from=builder /app/dist ./dist
+
+# Copy Prisma schema for migrations
+COPY --from=builder /app/prisma ./prisma
 
 # Create a non-root user
 RUN addgroup -g 1001 -S nodejs && \
