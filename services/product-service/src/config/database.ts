@@ -9,11 +9,11 @@ const prisma = new PrismaClient({
   ],
 });
 
-prisma.$on('query', (e) => {
+prisma.$on('query', (e: { query: any; duration: any; }) => {
   logger.debug(`Query: ${e.query}`, { duration: `${e.duration}ms` });
 });
 
-prisma.$on('error', (e) => {
+prisma.$on('error', (e: any) => {
   logger.error('Prisma Error:', e);
 });
 
