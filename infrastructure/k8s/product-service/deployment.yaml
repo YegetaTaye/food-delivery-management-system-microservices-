@@ -1,0 +1,55 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: product-service
+  namespace: dev
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: product-service
+  template:
+    metadata:
+      labels:
+        app: product-service
+    spec:
+      containers:
+        - name: product-service
+          image: product-service:latest
+          ports:
+            - containerPort: 3000
+          env:
+            - name: PORT
+              value: "3000"
+
+            - name: NODE_ENV
+              valueFrom:
+                configMapKeyRef:
+                  name: service-common-config
+                  key: NODE_ENV
+
+            - name: RABBITMQ_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: service-common-config
+                  key: RABBITMQ_URL
+
+            - name: MYSQL_HOST
+              value: "product-db.dev.svc.cluster.local"
+
+            - name: MYSQL_USER
+              valueFrom:
+                secretKeyRef:
+                  name: product-db-secret
+                  key: MYSQL_USER
+
+            - name: MYSQL_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: product-db-secret
+                  key: MYSQL_PASSWORD
+
+            - name: MYSQL_DATABASE
+              value: "product_db"
+
+          imagePullPolicy: IfNotPresent
