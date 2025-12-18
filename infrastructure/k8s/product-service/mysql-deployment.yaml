@@ -1,18 +1,17 @@
 apiVersion: apps/v1
-kind: StatefulSet
+kind: Deployment
 metadata:
-  name: user-db
+  name: product-db
   namespace: dev
 spec:
-  serviceName: "user-db"
   replicas: 1
   selector:
     matchLabels:
-      app: user-db
+      app: product-db
   template:
     metadata:
       labels:
-        app: user-db
+        app: product-db
     spec:
       containers:
         - name: mysql
@@ -21,30 +20,28 @@ spec:
             - containerPort: 3306
           env:
             - name: MYSQL_DATABASE
-              value: user_db
+              value: product_db
             - name: MYSQL_USER
               valueFrom:
                 secretKeyRef:
-                  name: user-db-secret
+                  name: product-db-secret
                   key: MYSQL_USER
             - name: MYSQL_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: user-db-secret
+                  name: product-db-secret
                   key: MYSQL_PASSWORD
             - name: MYSQL_ROOT_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: user-db-secret
+                  name: product-db-secret
                   key: MYSQL_ROOT_PASSWORD
           volumeMounts:
             - name: mysql-data
               mountPath: /var/lib/mysql
-  volumeClaimTemplates:
-    - metadata:
-        name: mysql-data
-      spec:
-        accessModes: ["ReadWriteOnce"]
-        resources:
-          requests:
-            storage: 1Gi
+          imagePullPolicy: IfNotPresent
+      volumes:
+        - name: mysql-data
+          hostPath:
+            path: /tmp/k3d-product-mysql-data
+            type: DirectoryOrCreate
