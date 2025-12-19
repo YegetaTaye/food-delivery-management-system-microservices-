@@ -24,6 +24,9 @@ export const authenticate = (req: Request, res: Response, next: NextFunction): v
     // Get token from Authorization header
     const authHeader = req.headers.authorization;
 
+    console.log('Auth Header:', authHeader);
+    console.log('JWT Secret:', config.jwtSecret);
+
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
       res.status(401).json({
         success: false,
@@ -34,14 +37,19 @@ export const authenticate = (req: Request, res: Response, next: NextFunction): v
 
     const token = authHeader.substring(7); // Remove 'Bearer ' prefix
 
+    console.log('Token to verify:', token.substring(0, 50) + '...');
+
     // Verify token
     const decoded = jwt.verify(token, config.jwtSecret) as JwtPayload;
+
+    console.log('Token decoded successfully:', decoded);
 
     // Attach user info to request
     req.user = decoded;
 
     next();
   } catch (error) {
+    console.error('JWT Verification Error:', error);
     if (error instanceof jwt.TokenExpiredError) {
       res.status(401).json({
         success: false,

@@ -5,6 +5,7 @@ import swaggerUi from 'swagger-ui-express';
 import { swaggerSpec } from './config/swagger';
 import { errorHandler } from './middlewares/error.middleware';
 import healthRoute from './routes/health.route';
+import orderRoutes from './routes/order.routes';
 import logger from './utils/logger';
 import { config } from './config/env';
 import fs from 'fs';
@@ -23,17 +24,26 @@ class App {
 
   private initializeMiddlewares(): void {
     // Security middleware
-    this.app.use(helmet());
+    this.app.use(helmet({
+      contentSecurityPolicy: false,
+      crossOriginEmbedderPolicy: false,
+    }));
     
-    // CORS middleware
-    this.app.use(cors());
+    // CORS middleware - Allow all origins for development
+    this.app.use(cors({
+      origin: '*',
+      methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+      allowedHeaders: ['Content-Type', 'Authorization'],
+      credentials: true,
+      maxAge: 86400 // 24 hours
+    }));
     
     // Body parsing middleware
     this.app.use(express.json());
     this.app.use(express.urlencoded({ extended: true }));
     
     // Request logging
-    this.app.use((req: Request, res: Response, next) => {
+    this.app.use((req: Request, _res: Response, next) => {
       logger.info(`${req.method} ${req.path}`, {
         ip: req.ip,
         userAgent: req.get('user-agent'),
@@ -46,11 +56,23 @@ class App {
     // Health check route
     this.app.use('/', healthRoute);
     
+    // API routes
+    this.app.use(`/api/${config.apiVersion}/orders`, orderRoutes);
+
+    // Serve swagger.json file
+    this.app.get('/swagger.json', (_req: Request, res: Response) => {
+      res.setHeader('Content-Type', 'application/json');
+      res.send(swaggerSpec);
+    });
+    
     // Swagger documentation
-    this.app.use('/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
+    this.app.use('/docs', swaggerUi.serve, swaggerUi.setup(undefined, {
       explorer: true,
       customCss: '.swagger-ui .topbar { display: none }',
       customSiteTitle: `${config.serviceName} API Docs`,
+      swaggerOptions: {
+        url: '/swagger.json',
+      },
     }));
 
     // 404 handler

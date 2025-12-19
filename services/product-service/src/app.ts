@@ -69,6 +69,7 @@ app.use('/docs', swaggerUi.serve, swaggerUi.setup(undefined, {
   customSiteTitle: `${config.serviceName} API Docs`,
   swaggerOptions: {
     url: '/swagger.json',
+    persistAuthorization: true,
   },
 }));
 
