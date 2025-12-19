@@ -40,7 +40,7 @@ export const authenticate = (req: Request, res: Response, next: NextFunction): v
   }
 };
 
-export const optionalAuthenticate = (req: Request, res: Response, next: NextFunction): void => {
+export const optionalAuthenticate = (req: Request, _res: Response, next: NextFunction): void => {
   try {
     const authHeader = req.headers.authorization;
 

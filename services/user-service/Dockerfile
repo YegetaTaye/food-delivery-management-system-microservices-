@@ -1,6 +1,9 @@
 # Build stage
 FROM node:18-alpine AS builder
 
+# Install OpenSSL for Prisma
+RUN apk add --no-cache openssl
+
 # Set working directory
 WORKDIR /app
 
@@ -22,11 +25,17 @@ RUN npm run build
 # Production stage
 FROM node:18-alpine
 
+# Install OpenSSL for Prisma
+RUN apk add --no-cache openssl
+
 # Set working directory
 WORKDIR /app
 
 # Copy package files
 COPY package*.json ./
+
+# Copy Prisma schema for migrations
+COPY --from=builder /app/prisma ./prisma
 
 # Install production dependencies only
 RUN npm ci --only=production
@@ -36,9 +45,6 @@ RUN npx prisma generate
 
 # Copy built files from builder
 COPY --from=builder /app/dist ./dist
-
-# Copy Prisma schema for migrations
-COPY --from=builder /app/prisma ./prisma
 
 # Create a non-root user
 RUN addgroup -g 1001 -S nodejs && \

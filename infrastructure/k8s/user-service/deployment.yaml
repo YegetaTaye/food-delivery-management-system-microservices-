@@ -52,4 +52,7 @@ spec:
             - name: MYSQL_DATABASE
               value: "user_db"
 
+            - name: DATABASE_URL
+              value: "mysql://$(MYSQL_USER):$(MYSQL_PASSWORD)@$(MYSQL_HOST):3306/$(MYSQL_DATABASE)"
+
           imagePullPolicy: IfNotPresent # Use "Always" if you want to always pull the latest image
