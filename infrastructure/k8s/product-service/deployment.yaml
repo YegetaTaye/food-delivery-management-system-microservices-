@@ -17,10 +17,10 @@ spec:
         - name: product-service
           image: yegeta100/product-service:latest
           ports:
-            - containerPort: 3000
+            - containerPort: 3002
           env:
             - name: PORT
-              value: "3000"
+              value: "3002"
 
             - name: NODE_ENV
               valueFrom:
