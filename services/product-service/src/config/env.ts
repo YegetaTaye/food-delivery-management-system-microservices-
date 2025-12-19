@@ -5,6 +5,7 @@ dotenv.config();
 
 interface EnvConfig {
   port: number;
+  apiVersion: string;
   serviceName: string;
   nodeEnv: string;
   databaseUrl: string;
@@ -16,6 +17,7 @@ interface EnvConfig {
 const getEnvConfig = (): EnvConfig => {
   return {
     port: parseInt(process.env.PORT || '4300', 10),
+    apiVersion: process.env.API_VERSION || 'v1',
     serviceName: process.env.SERVICE_NAME || 'product-service',
     nodeEnv: process.env.NODE_ENV || 'development',
     databaseUrl: process.env.DATABASE_URL || 'postgresql://localhost:5432/product_service',

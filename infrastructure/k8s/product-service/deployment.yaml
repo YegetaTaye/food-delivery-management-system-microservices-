@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
         - name: product-service
-          image: product-service:latest
+          image: yegeta100/product-service:latest
           ports:
             - containerPort: 3000
           env:
@@ -51,5 +51,8 @@ spec:
 
             - name: MYSQL_DATABASE
               value: "product_db"
+
+            - name: DATABASE_URL
+              value: "mysql://$(MYSQL_USER):$(MYSQL_PASSWORD)@$(MYSQL_HOST):3306/$(MYSQL_DATABASE)"
 
           imagePullPolicy: IfNotPresent
