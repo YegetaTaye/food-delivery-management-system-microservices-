@@ -26,18 +26,18 @@ class App {
   private initializeMiddlewares(): void {
     // Security middleware - Configure helmet to allow Swagger UI
     this.app.use(helmet({
-      contentSecurityPolicy: {
-        directives: {
-          defaultSrc: ["'self'"],
-          styleSrc: ["'self'", "'unsafe-inline'"],
-          scriptSrc: ["'self'", "'unsafe-inline'"],
-          imgSrc: ["'self'", "data:", "https:"],
-        },
-      },
+      contentSecurityPolicy: false, // Disable CSP for Swagger UI to work properly
+      crossOriginEmbedderPolicy: false,
     }));
     
-    // CORS middleware
-    this.app.use(cors());
+    // CORS middleware - Allow all origins for development
+    this.app.use(cors({
+      origin: '*',
+      methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+      allowedHeaders: ['Content-Type', 'Authorization'],
+      credentials: true,
+      maxAge: 86400 // 24 hours
+    }));
     
     // Body parsing middleware
     this.app.use(express.json());

@@ -1,5 +1,6 @@
 import swaggerJsdoc from 'swagger-jsdoc';
 import { config } from './env';
+import path from 'path';
 
 const swaggerOptions: swaggerJsdoc.Options = {
   definition: {
@@ -9,7 +10,12 @@ const swaggerOptions: swaggerJsdoc.Options = {
       version: '1.0.0',
       description: 'Menu items and categories API for food delivery platform',
     },
-    servers: [{ url: `http://localhost:${config.port}` }],
+    servers: [
+      { 
+        url: `http://localhost:3002/api/${config.apiVersion}`,
+        description: 'Product Service - Port 3002'
+      }
+    ],
     tags: [
       { name: 'Menu Items', description: 'Menu item CRUD operations' },
       { name: 'Categories', description: 'Category CRUD operations' },
@@ -349,7 +355,10 @@ const swaggerOptions: swaggerJsdoc.Options = {
       },
     },
   },
-  apis: ['./src/routes/*.ts'],
+  apis: [
+    path.join(__dirname, '../routes/*.ts'),  // For development with ts-node
+    path.join(__dirname, '../routes/*.js'),  // For production (compiled)
+  ],
 };
 
 export const swaggerSpec = swaggerJsdoc(swaggerOptions);

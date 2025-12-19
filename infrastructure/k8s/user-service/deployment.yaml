@@ -34,6 +34,24 @@ spec:
                   name: service-common-config
                   key: RABBITMQ_URL
 
+            - name: JWT_SECRET
+              valueFrom:
+                configMapKeyRef:
+                  name: service-common-config
+                  key: JWT_SECRET
+
+            - name: JWT_EXPIRES_IN
+              valueFrom:
+                configMapKeyRef:
+                  name: service-common-config
+                  key: JWT_EXPIRES_IN
+
+            - name: JWT_REFRESH_EXPIRES_IN
+              valueFrom:
+                configMapKeyRef:
+                  name: service-common-config
+                  key: JWT_REFRESH_EXPIRES_IN
+
             - name: MYSQL_HOST
               value: "user-db.dev.svc.cluster.local"
 
@@ -51,5 +69,8 @@ spec:
 
             - name: MYSQL_DATABASE
               value: "user_db"
+
+            - name: DATABASE_URL
+              value: "mysql://$(MYSQL_USER):$(MYSQL_PASSWORD)@$(MYSQL_HOST):3306/$(MYSQL_DATABASE)"
 
           imagePullPolicy: IfNotPresent # Use "Always" if you want to always pull the latest image

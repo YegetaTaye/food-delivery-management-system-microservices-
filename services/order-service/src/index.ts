@@ -1,9 +1,20 @@
 import app from './app';
 import { config } from './config/env';
 import logger from './utils/logger';
+import { PrismaClient } from '@prisma/client';
+import rabbitmqService from './services/rabbitmq.service';
 
-const startServer = (): void => {
+const prisma = new PrismaClient();
+
+const startServer = async (): Promise<void> => {
   try {
+    // Connect to database
+    await prisma.$connect();
+    logger.info('✅ Prisma connected to database');
+
+    // Connect to RabbitMQ
+    await rabbitmqService.connect();
+
     const server = app.listen(config.port, () => {
       logger.info(`🚀 ${config.serviceName} is running on port ${config.port}`);
       logger.info(`📚 API Documentation available at http://localhost:${config.port}/docs`);
@@ -12,8 +23,15 @@ const startServer = (): void => {
     });
 
     // Graceful shutdown
-    const gracefulShutdown = (signal: string) => {
+    const gracefulShutdown = async (signal: string) => {
       logger.info(`${signal} received. Starting graceful shutdown...`);
+      
+      // Disconnect from RabbitMQ
+      await rabbitmqService.disconnect();
+      
+      // Disconnect from database
+      await prisma.$disconnect();
+      
       server.close(() => {
         logger.info('Server closed. Exiting process.');
         process.exit(0);
@@ -32,7 +50,7 @@ const startServer = (): void => {
     // Handle unhandled promise rejections
     process.on('unhandledRejection', (reason: any) => {
       logger.error('Unhandled Rejection:', reason);
-      throw reason;
+      gracefulShutdown('unhandledRejection');
     });
 
     // Handle uncaught exceptions
@@ -40,7 +58,6 @@ const startServer = (): void => {
       logger.error('Uncaught Exception:', error);
       gracefulShutdown('UNCAUGHT_EXCEPTION');
     });
-
   } catch (error) {
     logger.error('Failed to start server:', error);
     process.exit(1);

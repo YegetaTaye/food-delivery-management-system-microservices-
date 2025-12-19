@@ -1,5 +1,6 @@
 import swaggerJsdoc from 'swagger-jsdoc';
 import { config } from './env';
+import path from 'path';
 
 const swaggerOptions: swaggerJsdoc.Options = {
   definition: {
@@ -7,19 +8,43 @@ const swaggerOptions: swaggerJsdoc.Options = {
     info: {
       title: config.serviceName,
       version: '1.0.0',
-      description: `${config.serviceName} API Documentation`,
+      description: `${config.serviceName} API Documentation - Coordinates User and Product services`,
       contact: {
         name: 'API Support',
       },
     },
     servers: [
       {
-        url: `http://localhost:${config.port}`,
+        url: `http://localhost:${config.port}/api/${config.apiVersion}`,
         description: 'Development server',
       },
     ],
+    components: {
+      securitySchemes: {
+        BearerAuth: {
+          type: 'http',
+          scheme: 'bearer',
+          bearerFormat: 'JWT',
+          description: 'Enter JWT token obtained from user-service (without Bearer prefix)',
+        },
+      },
+    },
+    security: [],
+    tags: [
+      {
+        name: 'Orders',
+        description: 'Order management endpoints',
+      },
+      {
+        name: 'Health',
+        description: 'Health check endpoint',
+      },
+    ],
   },
-  apis: ['./src/routes/*.ts', './dist/routes/*.js'], // Support both TS and compiled JS
+  apis: [
+    path.join(__dirname, '../routes/*.ts'),  // For development with ts-node
+    path.join(__dirname, '../routes/*.js'),  // For production (compiled)
+  ],
 };
 
 export const swaggerSpec = swaggerJsdoc(swaggerOptions);
