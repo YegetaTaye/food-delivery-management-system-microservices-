@@ -1,0 +1,94 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: order-service
+  namespace: dev
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: order-service
+  template:
+    metadata:
+      labels:
+        app: order-service
+    spec:
+      containers:
+        - name: order-service
+          image: yegeta100/order-service:latest
+          ports:
+            - containerPort: 3003
+          env:
+            - name: PORT
+              value: "3003"
+
+            - name: SERVICE_NAME
+              value: "order-service"
+
+            - name: API_VERSION
+              value: "v1"
+
+            - name: NODE_ENV
+              valueFrom:
+                configMapKeyRef:
+                  name: service-common-config
+                  key: NODE_ENV
+
+            - name: RABBITMQ_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: service-common-config
+                  key: RABBITMQ_URL
+
+            - name: JWT_SECRET
+              valueFrom:
+                configMapKeyRef:
+                  name: service-common-config
+                  key: JWT_SECRET
+
+            - name: JWT_EXPIRES_IN
+              valueFrom:
+                configMapKeyRef:
+                  name: service-common-config
+                  key: JWT_EXPIRES_IN
+
+            - name: JWT_REFRESH_EXPIRES_IN
+              valueFrom:
+                configMapKeyRef:
+                  name: service-common-config
+                  key: JWT_REFRESH_EXPIRES_IN
+
+            - name: PRODUCT_SERVICE_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: service-common-config
+                  key: PRODUCT_SERVICE_URL
+
+            - name: USER_SERVICE_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: service-common-config
+                  key: USER_SERVICE_URL
+
+            - name: MYSQL_HOST
+              value: "order-db.dev.svc.cluster.local"
+
+            - name: MYSQL_USER
+              valueFrom:
+                secretKeyRef:
+                  name: order-db-secret
+                  key: MYSQL_USER
+
+            - name: MYSQL_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: order-db-secret
+                  key: MYSQL_PASSWORD
+
+            - name: MYSQL_DATABASE
+              value: "order_db"
+
+            - name: DATABASE_URL
+              value: "mysql://$(MYSQL_USER):$(MYSQL_PASSWORD)@$(MYSQL_HOST):3306/$(MYSQL_DATABASE)"
+
+          imagePullPolicy: IfNotPresent

@@ -61,7 +61,8 @@ export class OrderService {
 
       return order;
     } catch (error: any) {
-      logger.error('Error creating order:', error);
+      const errorMessage = error.response?.data?.message || error.message || 'Unknown error';
+      logger.error('Error creating order:', { message: errorMessage, userId });
       throw error;
     }
   }
@@ -193,11 +194,18 @@ export class OrderService {
 
       logger.info('Stock validation successful');
     } catch (error: any) {
-      logger.error('Stock validation failed:', error);
+      const errorMessage = error.response?.data?.message || error.message || 'Unknown error';
+      const statusCode = error.response?.status;
+      logger.error('Stock validation failed:', { 
+        message: errorMessage, 
+        status: statusCode,
+        productServiceUrl: config.productServiceUrl 
+      });
+      
       if (error.response) {
-        throw new Error(`Product service error: ${error.response.data.message || error.message}`);
+        throw new Error(`Product service error: ${errorMessage}`);
       }
-      throw error;
+      throw new Error(`Failed to validate stock: ${errorMessage}`);
     }
   }
 }
