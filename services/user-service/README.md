@@ -1,62 +1,27 @@
-# Node.js + Express + TypeScript Microservice Skeleton
+# User Service
 
-A production-ready, reusable microservice skeleton built with Node.js, Express, and TypeScript. This template is designed for distributed microservices architectures and can be easily customized for different services.
-
-## 🎯 Designed For
-
-This skeleton can be reused for multiple microservices including:
-
-- User Service
-- Product Service
-- Cart Service
-- Order Service
-- Payment Service
-- Delivery Service
-- Notification Service
-- Analytics Service
+User authentication and management microservice for the food delivery platform. Handles user registration, authentication, JWT token generation, and user CRUD operations.
 
 ## ✨ Features
 
-- **TypeScript** - Type-safe code with strict mode enabled
-- **Express.js** - Fast, unopinionated web framework
-- **Winston Logger** - Structured logging with timestamps and JSON format
-- **Swagger/OpenAPI** - Auto-generated API documentation
-- **Docker** - Multi-stage builds for optimized container images
-- **Error Handling** - Global error middleware with async support
-- **Security** - Helmet and CORS enabled by default
+- **User Authentication** - Signup, login, refresh token, password change
+- **User Management** - Create, read, update, delete users with pagination and search
+- **JWT Authentication** - Access tokens and refresh tokens for secure API access
+- **Password Security** - Bcrypt password hashing
+- **MySQL Database** - Prisma ORM with MySQL
+- **Input Validation** - Joi schema validation
+- **API Documentation** - Swagger/OpenAPI documentation
+- **TypeScript** - Type-safe codebase
+- **Winston Logger** - Structured logging
 - **Health Check** - Built-in health endpoint
-- **Hot Reload** - Fast development with ts-node-dev
-
-## 📁 Project Structure
-
-```
-.
-├── src/
-│   ├── config/
-│   │   ├── env.ts           # Environment configuration
-│   │   └── swagger.ts       # Swagger setup
-│   ├── controllers/
-│   │   └── health.controller.ts
-│   ├── middlewares/
-│   │   └── error.middleware.ts
-│   ├── routes/
-│   │   └── health.route.ts
-│   ├── types/
-│   │   └── AppError.ts
-│   ├── utils/
-│   │   └── logger.ts
-│   ├── app.ts              # Express app setup
-│   └── index.ts            # Server entry point
-├── docs/
-│   └── swagger.json        # Auto-generated
-├── .env.example
-├── .dockerignore
-├── Dockerfile
-├── package.json
-└── tsconfig.json
-```
 
 ## 🚀 Quick Start
+
+### Prerequisites
+
+- Node.js 18+
+- MySQL database
+- npm or yarn
 
 ### 1. Install Dependencies
 
@@ -64,23 +29,40 @@ This skeleton can be reused for multiple microservices including:
 npm install
 ```
 
-### 2. Configure Environment
+### 2. Setup Database
 
-Copy the example environment file and customize it:
+Generate Prisma Client:
 
 ```bash
-cp .env.example .env
+npm run prisma:generate
 ```
 
-Edit `.env`:
+Run migrations:
+
+```bash
+npm run prisma:migrate
+```
+
+### 3. Configure Environment
+
+Create a `.env` file in the root directory:
 
 ```env
+# Server Configuration
 PORT=3000
-SERVICE_NAME=UserService
+SERVICE_NAME=user-service
 NODE_ENV=development
+
+# Database
+DATABASE_URL="mysql://user:password@localhost:3306/user_service_db"
+
+# JWT Configuration
+JWT_SECRET=your-super-secret-jwt-key-change-in-production-minimum-32-characters
+JWT_EXPIRES_IN=7d
+JWT_REFRESH_EXPIRES_IN=30d
 ```
 
-### 3. Run in Development
+### 4. Run in Development
 
 ```bash
 npm run dev
@@ -88,34 +70,136 @@ npm run dev
 
 The service will start on `http://localhost:3000`
 
-### 4. Access Documentation
+### 5. Access Documentation
 
 - **API Docs**: http://localhost:3000/docs
 - **Health Check**: http://localhost:3000/health
 
 ## 📝 Available Scripts
 
-| Script          | Description                              |
-| --------------- | ---------------------------------------- |
-| `npm run dev`   | Start development server with hot reload |
-| `npm run build` | Build TypeScript to JavaScript           |
-| `npm start`     | Start production server                  |
+| Script              | Description                              |
+| ------------------- | ---------------------------------------- |
+| `npm run dev`       | Start development server with hot reload |
+| `npm run build`     | Build TypeScript to JavaScript           |
+| `npm start`         | Start production server                  |
+| `npm run prisma:generate` | Generate Prisma Client            |
+| `npm run prisma:migrate`  | Run database migrations          |
+| `npm run prisma:studio`   | Open Prisma Studio GUI          |
+
+## 📚 API Endpoints
+
+### Authentication
+
+- `POST /api/auth/signup` - Register a new user
+- `POST /api/auth/login` - Login user and get JWT tokens
+- `POST /api/auth/refresh` - Refresh access token using refresh token
+- `GET /api/auth/me` - Get current authenticated user (🔒 requires auth)
+- `POST /api/auth/change-password` - Change user password (🔒 requires auth)
+
+### Users
+
+- `GET /api/users` - Get all users with pagination (🔒 requires auth)
+  - Query params: `page`, `limit`
+- `GET /api/users/search` - Search users by name or email (🔒 requires auth)
+  - Query params: `q` (required), `page`, `limit`
+- `GET /api/users/:id` - Get user by ID (🔒 requires auth)
+- `POST /api/users` - Create a new user (🔒 requires auth)
+- `PUT /api/users/:id` - Update user (🔒 requires auth)
+- `DELETE /api/users/:id` - Delete user (🔒 requires auth)
+
+### Health
+
+- `GET /health` - Health check (public)
+
+## 🔐 Authentication
+
+Most endpoints require JWT authentication. Include the token in the `Authorization` header:
+
+```bash
+Authorization: Bearer <your-jwt-token>
+```
+
+### Token Types
+
+- **Access Token**: Expires in 7 days (default), used for API requests
+- **Refresh Token**: Expires in 30 days (default), used to get new access tokens
+
+## 📁 Project Structure
+
+```
+.
+├── src/
+│   ├── config/
+│   │   ├── env.ts              # Environment configuration
+│   │   └── swagger.ts          # Swagger setup
+│   ├── controllers/
+│   │   ├── auth.controller.ts  # Authentication logic
+│   │   ├── health.controller.ts
+│   │   └── user.controller.ts  # User management logic
+│   ├── middlewares/
+│   │   ├── auth.middleware.ts  # JWT authentication middleware
+│   │   ├── error.middleware.ts # Global error handler
+│   │   └── validate.middleware.ts # Request validation
+│   ├── routes/
+│   │   ├── auth.routes.ts      # Authentication routes
+│   │   ├── health.route.ts
+│   │   └── user.routes.ts      # User management routes
+│   ├── services/
+│   │   ├── auth.service.ts     # Authentication business logic
+│   │   └── user.service.ts     # User business logic
+│   ├── types/
+│   │   └── AppError.ts         # Error types
+│   ├── utils/
+│   │   ├── logger.ts           # Winston logger
+│   │   └── jwt.util.ts         # JWT utilities
+│   ├── validations/
+│   │   └── user.validation.ts  # Joi validation schemas
+│   ├── app.ts                  # Express app setup
+│   └── index.ts                # Server entry point
+├── prisma/
+│   ├── schema.prisma           # Database schema
+│   └── migrations/             # Database migrations
+├── docs/
+│   └── swagger.json            # Auto-generated API docs
+├── Dockerfile
+├── package.json
+└── tsconfig.json
+```
+
+## 🗄️ Database Schema
+
+### User Model
+
+```prisma
+model User {
+  id           String   @id @default(uuid())
+  name         String
+  email        String   @unique
+  passwordHash String
+  createdAt    DateTime @default(now())
+}
+```
 
 ## 🐳 Docker
 
 ### Build Image
 
 ```bash
-docker build -t your-service-name:latest .
+docker build -t user-service:latest .
 ```
 
 ### Run Container
 
 ```bash
 docker run -p 3000:3000 \
-  -e SERVICE_NAME="YourService" \
   -e PORT=3000 \
-  your-service-name:latest
+  -e SERVICE_NAME=user-service \
+  -e NODE_ENV=production \
+  -e DATABASE_URL="mysql://user:password@host:3306/db" \
+  -e JWT_SECRET="your-secret-key" \
+  -e JWT_EXPIRES_IN=7d \
+  -e JWT_REFRESH_EXPIRES_IN=30d \
+  user-service:latest
 ```
 
 ### Docker Compose Example
@@ -126,85 +210,70 @@ services:
   user-service:
     build: .
     ports:
-      - "3001:3000"
+      - "3000:3000"
     environment:
-      - SERVICE_NAME=UserService
       - PORT=3000
+      - SERVICE_NAME=user-service
       - NODE_ENV=production
+      - DATABASE_URL=mysql://user:password@mysql:3306/user_service_db
+      - JWT_SECRET=your-super-secret-jwt-key
+      - JWT_EXPIRES_IN=7d
+      - JWT_REFRESH_EXPIRES_IN=30d
+    depends_on:
+      - mysql
 ```
 
-## 🔧 Customization Guide
+## 📦 Dependencies
 
-### For Each New Service:
+### Production:
 
-1. **Update Environment Variables**
+- `express` - Web framework
+- `@prisma/client` - Prisma ORM client
+- `jsonwebtoken` - JWT token generation and verification
+- `bcryptjs` - Password hashing
+- `joi` - Input validation
+- `dotenv` - Environment variables
+- `winston` - Logging
+- `cors` - Cross-origin resource sharing
+- `helmet` - Security headers
+- `swagger-ui-express` - API documentation UI
+- `swagger-jsdoc` - Swagger spec generation
 
-   ```bash
-   # In .env
-   SERVICE_NAME=ProductService  # Change to your service name
-   PORT=3001                    # Use different port if needed
-   ```
+### Development:
 
-2. **Add Your Routes**
+- `typescript` - TypeScript compiler
+- `ts-node-dev` - Development server with hot reload
+- `prisma` - Prisma CLI
+- `@types/*` - Type definitions
 
-   ```typescript
-   // src/routes/product.route.ts
-   import { Router } from "express";
+## 🔄 Deployment
 
-   const router = Router();
-   router.get("/products" /* your controller */);
+### Environment Variables for Production
 
-   export default router;
-   ```
-
-3. **Register Routes in app.ts**
-
-   ```typescript
-   import productRoute from "./routes/product.route";
-   this.app.use("/api", productRoute);
-   ```
-
-4. **Add Controllers**
-
-   ```typescript
-   // src/controllers/product.controller.ts
-   export class ProductController {
-     public static async getProducts(req: Request, res: Response) {
-       // Your logic here
-     }
-   }
-   ```
-
-5. **Update Docker/Package Name**
-   - Change `"name"` in `package.json`
-   - Update Docker image tag when building
-
-## 📚 API Documentation
-
-Swagger documentation is automatically generated from JSDoc comments in your route files.
-
-### Example Route Documentation:
-
-```typescript
-/**
- * @swagger
- * /api/products:
- *   get:
- *     summary: Get all products
- *     tags:
- *       - Products
- *     responses:
- *       200:
- *         description: List of products
- */
-router.get("/products", ProductController.getProducts);
+```env
+NODE_ENV=production
+PORT=3000
+SERVICE_NAME=user-service
+DATABASE_URL=mysql://user:password@host:3306/database
+JWT_SECRET=your-super-secret-jwt-key-minimum-32-characters
+JWT_EXPIRES_IN=7d
+JWT_REFRESH_EXPIRES_IN=30d
 ```
 
-## 🔐 Security Features
+### Build for Production
 
-- **Helmet**: Sets various HTTP headers for security
+```bash
+npm run build
+npm start
+```
+
+## 🔒 Security Features
+
+- **Password Hashing**: Bcrypt with salt rounds
+- **JWT Tokens**: Secure token-based authentication
+- **Helmet**: HTTP security headers
 - **CORS**: Configurable cross-origin resource sharing
-- **Input Validation**: Ready for validation middleware (add express-validator)
+- **Input Validation**: Joi schema validation
 - **Error Handling**: Prevents information leakage in production
 
 ## 📊 Logging
@@ -220,104 +289,16 @@ Winston logger includes:
 ### Usage:
 
 ```typescript
-import logger from "./utils/logger";
+import logger from './utils/logger';
 
-logger.info("User created", { userId: 123 });
-logger.error("Failed to process", { error: err.message });
+logger.info('User created', { userId: '123' });
+logger.error('Failed to process', { error: err.message });
 ```
 
-## 🧪 Adding Tests (Recommended)
+## 🤝 Integration with Other Services
 
-Add to `package.json`:
-
-```json
-{
-  "devDependencies": {
-    "jest": "^29.7.0",
-    "@types/jest": "^29.5.11",
-    "ts-jest": "^29.1.1",
-    "supertest": "^6.3.3",
-    "@types/supertest": "^6.0.2"
-  },
-  "scripts": {
-    "test": "jest",
-    "test:watch": "jest --watch"
-  }
-}
-```
-
-## 🔄 Deployment
-
-### Environment Variables for Production
-
-```env
-NODE_ENV=production
-PORT=3000
-SERVICE_NAME=YourService
-# Add database URLs, API keys, etc.
-```
-
-### Build for Production
-
-```bash
-npm run build
-npm start
-```
-
-## 📦 Dependencies
-
-### Production:
-
-- `express` - Web framework
-- `dotenv` - Environment variables
-- `winston` - Logging
-- `cors` - Cross-origin resource sharing
-- `helmet` - Security headers
-- `multer` - File uploads (ready for use)
-- `swagger-ui-express` - API documentation UI
-- `swagger-jsdoc` - Swagger spec generation
-
-### Development:
-
-- `typescript` - TypeScript compiler
-- `ts-node-dev` - Development server
-- `@types/*` - Type definitions
-
-## 🤝 Contributing
-
-This is a template project. Customize it for your specific microservice needs.
+This service provides JWT tokens that can be used by other microservices (product-service, order-service, etc.) to authenticate requests. All services should use the same `JWT_SECRET` for token verification.
 
 ## 📄 License
 
 ISC
-
----
-
-## 🎯 Service-Specific Examples
-
-### User Service
-
-```env
-SERVICE_NAME=UserService
-PORT=3001
-```
-
-### Product Service
-
-```env
-SERVICE_NAME=ProductService
-PORT=3002
-```
-
-### Order Service
-
-```env
-SERVICE_NAME=OrderService
-PORT=3003
-```
-
-And so on for Cart, Payment, Delivery, Notification, and Analytics services.
-
----
-
-**Happy Coding! 🚀**
