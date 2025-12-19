@@ -34,6 +34,24 @@ spec:
                   name: service-common-config
                   key: RABBITMQ_URL
 
+            - name: JWT_SECRET
+              valueFrom:
+                configMapKeyRef:
+                  name: service-common-config
+                  key: JWT_SECRET
+
+            - name: JWT_EXPIRES_IN
+              valueFrom:
+                configMapKeyRef:
+                  name: service-common-config
+                  key: JWT_EXPIRES_IN
+
+            - name: JWT_REFRESH_EXPIRES_IN
+              valueFrom:
+                configMapKeyRef:
+                  name: service-common-config
+                  key: JWT_REFRESH_EXPIRES_IN
+
             - name: MYSQL_HOST
               value: "user-db.dev.svc.cluster.local"
 
