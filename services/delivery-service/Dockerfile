@@ -1,7 +1,6 @@
 # Build stage
-FROM node:18-alpine AS builder
+FROM node:20-alpine AS builder
 
-# Set working directory
 WORKDIR /app
 
 # Copy package files
@@ -17,36 +16,40 @@ COPY . .
 RUN npm run build
 
 # Production stage
-FROM node:18-alpine
+FROM node:20-alpine AS production
 
-# Set working directory
 WORKDIR /app
+
+# Create non-root user
+RUN addgroup -g 1001 -S nodejs && \
+    adduser -S nodejs -u 1001
 
 # Copy package files
 COPY package*.json ./
 
 # Install production dependencies only
-RUN npm ci --only=production
+RUN npm ci --only=production && npm cache clean --force
 
-# Copy built files from builder
+# Copy built application
 COPY --from=builder /app/dist ./dist
 
-# Create a non-root user
-RUN addgroup -g 1001 -S nodejs && \
-    adduser -S nodejs -u 1001
-
-# Change ownership
-RUN chown -R nodejs:nodejs /app
+# Create docs directory
+RUN mkdir -p docs && chown -R nodejs:nodejs /app
 
 # Switch to non-root user
 USER nodejs
 
+# Environment variables
+ENV NODE_ENV=production
+ENV PORT=4500
+ENV SERVICE_NAME=delivery-service
+
 # Expose port
-EXPOSE 3000
+EXPOSE 4500
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-    CMD node -e "require('http').get('http://localhost:3000/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"
+  CMD wget --no-verbose --tries=1 --spider http://localhost:4500/health || exit 1
 
 # Start the application
 CMD ["node", "dist/index.js"]

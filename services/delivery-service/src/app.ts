@@ -5,6 +5,7 @@ import swaggerUi from 'swagger-ui-express';
 import { swaggerSpec } from './config/swagger';
 import { errorHandler } from './middlewares/error.middleware';
 import healthRoute from './routes/health.route';
+import deliveryRoutes from './routes/delivery.routes';
 import logger from './utils/logger';
 import { config } from './config/env';
 import fs from 'fs';
@@ -33,7 +34,7 @@ class App {
     this.app.use(express.urlencoded({ extended: true }));
     
     // Request logging
-    this.app.use((req: Request, res: Response, next) => {
+    this.app.use((req: Request, _res: Response, next) => {
       logger.info(`${req.method} ${req.path}`, {
         ip: req.ip,
         userAgent: req.get('user-agent'),
@@ -46,6 +47,9 @@ class App {
     // Health check route
     this.app.use('/', healthRoute);
     
+    // Delivery routes
+    this.app.use('/deliveries', deliveryRoutes);
+    
     // Swagger documentation
     this.app.use('/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
       explorer: true,
@@ -56,6 +60,7 @@ class App {
     // 404 handler
     this.app.use('*', (req: Request, res: Response) => {
       res.status(404).json({
+        success: false,
         message: 'Route not found',
         path: req.originalUrl,
       });

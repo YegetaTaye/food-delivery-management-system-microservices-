@@ -8,10 +8,10 @@ interface ErrorResponse {
 }
 
 export const errorHandler = (
-  error: any,
+  error: Error & { status?: number; statusCode?: number },
   req: Request,
   res: Response,
-  next: NextFunction
+  _next: NextFunction
 ): Response => {
   const status = error.status || error.statusCode || 500;
   const message = error.message || 'Internal Server Error';
