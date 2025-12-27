@@ -24,7 +24,7 @@ const router = Router();
  *                   example: ok
  *                 service:
  *                   type: string
- *                   example: MicroserviceName
+ *                   example: analytics-service
  *                 timestamp:
  *                   type: string
  *                   format: date-time

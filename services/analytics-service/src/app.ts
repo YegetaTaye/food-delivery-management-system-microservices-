@@ -5,6 +5,7 @@ import swaggerUi from 'swagger-ui-express';
 import { swaggerSpec } from './config/swagger';
 import { errorHandler } from './middlewares/error.middleware';
 import healthRoute from './routes/health.route';
+import analyticsRoutes from './routes/analytics.routes';
 import logger from './utils/logger';
 import { config } from './config/env';
 import fs from 'fs';
@@ -24,16 +25,16 @@ class App {
   private initializeMiddlewares(): void {
     // Security middleware
     this.app.use(helmet());
-    
+
     // CORS middleware
     this.app.use(cors());
-    
+
     // Body parsing middleware
     this.app.use(express.json());
     this.app.use(express.urlencoded({ extended: true }));
-    
+
     // Request logging
-    this.app.use((req: Request, res: Response, next) => {
+    this.app.use((req: Request, _res: Response, next) => {
       logger.info(`${req.method} ${req.path}`, {
         ip: req.ip,
         userAgent: req.get('user-agent'),
@@ -45,17 +46,25 @@ class App {
   private initializeRoutes(): void {
     // Health check route
     this.app.use('/', healthRoute);
-    
+
+    // Analytics routes
+    this.app.use('/analytics', analyticsRoutes);
+
     // Swagger documentation
-    this.app.use('/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
-      explorer: true,
-      customCss: '.swagger-ui .topbar { display: none }',
-      customSiteTitle: `${config.serviceName} API Docs`,
-    }));
+    this.app.use(
+      '/docs',
+      swaggerUi.serve,
+      swaggerUi.setup(swaggerSpec, {
+        explorer: true,
+        customCss: '.swagger-ui .topbar { display: none }',
+        customSiteTitle: `${config.serviceName} API Docs`,
+      })
+    );
 
     // 404 handler
     this.app.use('*', (req: Request, res: Response) => {
       res.status(404).json({
+        success: false,
         message: 'Route not found',
         path: req.originalUrl,
       });
@@ -67,7 +76,7 @@ class App {
     if (!fs.existsSync(docsDir)) {
       fs.mkdirSync(docsDir, { recursive: true });
     }
-    
+
     const swaggerPath = path.join(docsDir, 'swagger.json');
     fs.writeFileSync(swaggerPath, JSON.stringify(swaggerSpec, null, 2));
     logger.info(`Swagger documentation generated at ${swaggerPath}`);

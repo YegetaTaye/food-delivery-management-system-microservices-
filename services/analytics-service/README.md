@@ -1,323 +1,277 @@
-# Node.js + Express + TypeScript Microservice Skeleton
+# Analytics Service
 
-A production-ready, reusable microservice skeleton built with Node.js, Express, and TypeScript. This template is designed for distributed microservices architectures and can be easily customized for different services.
+An event-driven analytics service that collects system events and stores them for analytics and reporting.
 
-## 🎯 Designed For
+## Overview
 
-This skeleton can be reused for multiple microservices including:
+The Analytics Service is responsible for:
 
-- User Service
-- Product Service
-- Cart Service
-- Order Service
-- Payment Service
-- Delivery Service
-- Notification Service
-- Analytics Service
+- Listening to domain events from RabbitMQ
+- Persisting events to MySQL for analytics
+- Providing APIs to query and analyze events
 
-## ✨ Features
-
-- **TypeScript** - Type-safe code with strict mode enabled
-- **Express.js** - Fast, unopinionated web framework
-- **Winston Logger** - Structured logging with timestamps and JSON format
-- **Swagger/OpenAPI** - Auto-generated API documentation
-- **Docker** - Multi-stage builds for optimized container images
-- **Error Handling** - Global error middleware with async support
-- **Security** - Helmet and CORS enabled by default
-- **Health Check** - Built-in health endpoint
-- **Hot Reload** - Fast development with ts-node-dev
-
-## 📁 Project Structure
+## Architecture
 
 ```
-.
+┌─────────────────┐     order.created      ┌───────────────────────┐
+│  Order Service  │ ─────────────────────► │                       │
+└─────────────────┘   order.cancelled      │                       │
+                    order.status.updated  │   Analytics Service   │
+┌─────────────────┐                        │                       │
+│ Payment Service │   payment.completed    │   ┌───────────────┐   │
+└─────────────────┘ ─────────────────────► │   │    MySQL      │   │
+                                          │   │   (Prisma)    │   │
+                                          │   └───────────────┘   │
+                                          └───────────────────────┘
+```
+
+## Tech Stack
+
+- **Runtime**: Node.js
+- **Framework**: Express
+- **Language**: TypeScript (strict mode)
+- **Database**: MySQL with Prisma ORM
+- **Message Broker**: RabbitMQ
+- **API Documentation**: Swagger (OpenAPI 3.0)
+- **Logging**: Winston
+
+## Events Consumed
+
+| Event                | Routing Key            | Description          |
+| -------------------- | ---------------------- | -------------------- |
+| Order Created        | `order.created`        | New order placed     |
+| Order Cancelled      | `order.cancelled`      | Order cancelled      |
+| Order Status Updated | `order.status.updated` | Order status changed |
+| Payment Completed    | `payment.completed`    | Payment processed    |
+
+**Exchange**: `order.events` (direct)
+
+## Database Schema
+
+```prisma
+model AnalyticsEvent {
+  id            String   @id @default(uuid())
+  eventType     String
+  sourceService String
+  payload       Json
+  createdAt     DateTime @default(now())
+}
+```
+
+## API Endpoints
+
+| Method | Endpoint                  | Description                       |
+| ------ | ------------------------- | --------------------------------- |
+| GET    | `/health`                 | Health check                      |
+| GET    | `/analytics/events`       | List all events (with pagination) |
+| GET    | `/analytics/events/:type` | Get events by type                |
+| GET    | `/analytics/stats`        | Get event statistics              |
+| GET    | `/docs`                   | Swagger API documentation         |
+
+## Getting Started
+
+### Prerequisites
+
+- Node.js 18+
+- MySQL 8.0+
+- RabbitMQ 3.x
+
+### Installation
+
+```bash
+# Install dependencies
+npm install
+
+# Copy environment file
+cp .env.example .env
+
+# Edit .env with your configuration
+
+# Run database migrations
+npm run prisma:migrate
+
+# Generate Prisma client
+npm run prisma:generate
+```
+
+### Environment Variables
+
+| Variable       | Description             | Default                 |
+| -------------- | ----------------------- | ----------------------- |
+| `PORT`         | Server port             | `4700`                  |
+| `NODE_ENV`     | Environment             | `development`           |
+| `SERVICE_NAME` | Service identifier      | `analytics-service`     |
+| `DATABASE_URL` | MySQL connection URL    | -                       |
+| `RABBITMQ_URL` | RabbitMQ connection URL | `amqp://localhost:5672` |
+
+### Database URL Format
+
+```
+mysql://USER:PASSWORD@HOST:PORT/DATABASE
+```
+
+Example:
+
+```
+DATABASE_URL="mysql://root:password@localhost:3306/analytics_db"
+```
+
+### Running the Service
+
+```bash
+# Development mode (with hot reload)
+npm run dev
+
+# Build for production
+npm run build
+
+# Production mode
+npm start
+
+# Open Prisma Studio (database GUI)
+npm run prisma:studio
+```
+
+### Docker
+
+```bash
+# Build image
+docker build -t analytics-service .
+
+# Run container
+docker run -d \
+  -p 4700:4700 \
+  -e DATABASE_URL=mysql://root:password@host.docker.internal:3306/analytics_db \
+  -e RABBITMQ_URL=amqp://host.docker.internal:5672 \
+  analytics-service
+```
+
+## API Examples
+
+### Get All Events
+
+```bash
+curl "http://localhost:4700/analytics/events?limit=50&offset=0"
+```
+
+Response:
+
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "id": "550e8400-e29b-41d4-a716-446655440000",
+      "eventType": "order.created",
+      "sourceService": "order-service",
+      "payload": {
+        "orderId": "order-123",
+        "userId": "user-456",
+        "total": 29.99
+      },
+      "createdAt": "2025-12-27T10:00:00.000Z"
+    }
+  ],
+  "pagination": {
+    "total": 150,
+    "limit": 50,
+    "offset": 0,
+    "hasMore": true
+  }
+}
+```
+
+### Get Events by Type
+
+```bash
+curl "http://localhost:4700/analytics/events/order.created"
+```
+
+Response:
+
+```json
+{
+  "success": true,
+  "data": [...],
+  "count": 50,
+  "eventType": "order.created"
+}
+```
+
+### Get Statistics
+
+```bash
+curl http://localhost:4700/analytics/stats
+```
+
+Response:
+
+```json
+{
+  "success": true,
+  "data": {
+    "totalEvents": 500,
+    "byEventType": {
+      "order.created": 150,
+      "order.cancelled": 20,
+      "order.status.updated": 280,
+      "payment.completed": 50
+    },
+    "bySourceService": {
+      "order-service": 450,
+      "payment-service": 50
+    }
+  }
+}
+```
+
+## Project Structure
+
+```
+├── prisma/
+│   └── schema.prisma         # Database schema
 ├── src/
+│   ├── index.ts              # Application entry point
+│   ├── app.ts                # Express app configuration
 │   ├── config/
 │   │   ├── env.ts           # Environment configuration
-│   │   └── swagger.ts       # Swagger setup
+│   │   ├── database.ts      # Prisma connection
+│   │   ├── rabbitmq.ts      # RabbitMQ connection
+│   │   └── swagger.ts       # Swagger configuration
+│   ├── routes/
+│   │   ├── health.route.ts  # Health check route
+│   │   └── analytics.routes.ts # Analytics API routes
 │   ├── controllers/
-│   │   └── health.controller.ts
+│   │   ├── health.controller.ts
+│   │   └── analytics.controller.ts
+│   ├── services/
+│   │   └── analytics.service.ts # Business logic
+│   ├── messaging/
+│   │   └── rabbitmq.consumer.ts # Event consumer
+│   ├── types/
+│   │   └── analytics.types.ts # TypeScript interfaces
 │   ├── middlewares/
 │   │   └── error.middleware.ts
-│   ├── routes/
-│   │   └── health.route.ts
-│   ├── types/
-│   │   └── AppError.ts
-│   ├── utils/
-│   │   └── logger.ts
-│   ├── app.ts              # Express app setup
-│   └── index.ts            # Server entry point
-├── docs/
-│   └── swagger.json        # Auto-generated
-├── .env.example
-├── .dockerignore
+│   └── utils/
+│       └── logger.ts        # Winston logger
 ├── Dockerfile
 ├── package.json
 └── tsconfig.json
 ```
 
-## 🚀 Quick Start
-
-### 1. Install Dependencies
+## Database Migrations
 
 ```bash
-npm install
+# Create a new migration
+npm run prisma:migrate
+
+# Apply migrations in production
+npm run prisma:migrate:prod
+
+# Reset database (development only)
+npx prisma migrate reset
 ```
 
-### 2. Configure Environment
-
-Copy the example environment file and customize it:
-
-```bash
-cp .env.example .env
-```
-
-Edit `.env`:
-
-```env
-PORT=3000
-SERVICE_NAME=UserService
-NODE_ENV=development
-```
-
-### 3. Run in Development
-
-```bash
-npm run dev
-```
-
-The service will start on `http://localhost:3000`
-
-### 4. Access Documentation
-
-- **API Docs**: http://localhost:3000/docs
-- **Health Check**: http://localhost:3000/health
-
-## 📝 Available Scripts
-
-| Script          | Description                              |
-| --------------- | ---------------------------------------- |
-| `npm run dev`   | Start development server with hot reload |
-| `npm run build` | Build TypeScript to JavaScript           |
-| `npm start`     | Start production server                  |
-
-## 🐳 Docker
-
-### Build Image
-
-```bash
-docker build -t your-service-name:latest .
-```
-
-### Run Container
-
-```bash
-docker run -p 3000:3000 \
-  -e SERVICE_NAME="YourService" \
-  -e PORT=3000 \
-  your-service-name:latest
-```
-
-### Docker Compose Example
-
-```yaml
-version: "3.8"
-services:
-  user-service:
-    build: .
-    ports:
-      - "3001:3000"
-    environment:
-      - SERVICE_NAME=UserService
-      - PORT=3000
-      - NODE_ENV=production
-```
-
-## 🔧 Customization Guide
-
-### For Each New Service:
-
-1. **Update Environment Variables**
-
-   ```bash
-   # In .env
-   SERVICE_NAME=ProductService  # Change to your service name
-   PORT=3001                    # Use different port if needed
-   ```
-
-2. **Add Your Routes**
-
-   ```typescript
-   // src/routes/product.route.ts
-   import { Router } from "express";
-
-   const router = Router();
-   router.get("/products" /* your controller */);
-
-   export default router;
-   ```
-
-3. **Register Routes in app.ts**
-
-   ```typescript
-   import productRoute from "./routes/product.route";
-   this.app.use("/api", productRoute);
-   ```
-
-4. **Add Controllers**
-
-   ```typescript
-   // src/controllers/product.controller.ts
-   export class ProductController {
-     public static async getProducts(req: Request, res: Response) {
-       // Your logic here
-     }
-   }
-   ```
-
-5. **Update Docker/Package Name**
-   - Change `"name"` in `package.json`
-   - Update Docker image tag when building
-
-## 📚 API Documentation
-
-Swagger documentation is automatically generated from JSDoc comments in your route files.
-
-### Example Route Documentation:
-
-```typescript
-/**
- * @swagger
- * /api/products:
- *   get:
- *     summary: Get all products
- *     tags:
- *       - Products
- *     responses:
- *       200:
- *         description: List of products
- */
-router.get("/products", ProductController.getProducts);
-```
-
-## 🔐 Security Features
-
-- **Helmet**: Sets various HTTP headers for security
-- **CORS**: Configurable cross-origin resource sharing
-- **Input Validation**: Ready for validation middleware (add express-validator)
-- **Error Handling**: Prevents information leakage in production
-
-## 📊 Logging
-
-Winston logger includes:
-
-- Timestamp on all logs
-- Service name in metadata
-- Colored console output in development
-- JSON format for production
-- Request logging middleware
-
-### Usage:
-
-```typescript
-import logger from "./utils/logger";
-
-logger.info("User created", { userId: 123 });
-logger.error("Failed to process", { error: err.message });
-```
-
-## 🧪 Adding Tests (Recommended)
-
-Add to `package.json`:
-
-```json
-{
-  "devDependencies": {
-    "jest": "^29.7.0",
-    "@types/jest": "^29.5.11",
-    "ts-jest": "^29.1.1",
-    "supertest": "^6.3.3",
-    "@types/supertest": "^6.0.2"
-  },
-  "scripts": {
-    "test": "jest",
-    "test:watch": "jest --watch"
-  }
-}
-```
-
-## 🔄 Deployment
-
-### Environment Variables for Production
-
-```env
-NODE_ENV=production
-PORT=3000
-SERVICE_NAME=YourService
-# Add database URLs, API keys, etc.
-```
-
-### Build for Production
-
-```bash
-npm run build
-npm start
-```
-
-## 📦 Dependencies
-
-### Production:
-
-- `express` - Web framework
-- `dotenv` - Environment variables
-- `winston` - Logging
-- `cors` - Cross-origin resource sharing
-- `helmet` - Security headers
-- `multer` - File uploads (ready for use)
-- `swagger-ui-express` - API documentation UI
-- `swagger-jsdoc` - Swagger spec generation
-
-### Development:
-
-- `typescript` - TypeScript compiler
-- `ts-node-dev` - Development server
-- `@types/*` - Type definitions
-
-## 🤝 Contributing
-
-This is a template project. Customize it for your specific microservice needs.
-
-## 📄 License
+## License
 
 ISC
-
----
-
-## 🎯 Service-Specific Examples
-
-### User Service
-
-```env
-SERVICE_NAME=UserService
-PORT=3001
-```
-
-### Product Service
-
-```env
-SERVICE_NAME=ProductService
-PORT=3002
-```
-
-### Order Service
-
-```env
-SERVICE_NAME=OrderService
-PORT=3003
-```
-
-And so on for Cart, Payment, Delivery, Notification, and Analytics services.
-
----
-
-**Happy Coding! 🚀**
