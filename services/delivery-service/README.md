@@ -1,323 +1,233 @@
-# Node.js + Express + TypeScript Microservice Skeleton
+# Delivery Service
 
-A production-ready, reusable microservice skeleton built with Node.js, Express, and TypeScript. This template is designed for distributed microservices architectures and can be easily customized for different services.
+A lightweight MVP microservice for simulating delivery assignment and tracking in a distributed food delivery system.
 
-## 🎯 Designed For
+## Overview
 
-This skeleton can be reused for multiple microservices including:
+The Delivery Service is responsible for:
+- Listening to order-related events from RabbitMQ
+- Creating and updating delivery records
+- Exposing REST APIs to query and update delivery status
 
-- User Service
-- Product Service
-- Cart Service
-- Order Service
-- Payment Service
-- Delivery Service
-- Notification Service
-- Analytics Service
+## Architecture
 
-## ✨ Features
-
-- **TypeScript** - Type-safe code with strict mode enabled
-- **Express.js** - Fast, unopinionated web framework
-- **Winston Logger** - Structured logging with timestamps and JSON format
-- **Swagger/OpenAPI** - Auto-generated API documentation
-- **Docker** - Multi-stage builds for optimized container images
-- **Error Handling** - Global error middleware with async support
-- **Security** - Helmet and CORS enabled by default
-- **Health Check** - Built-in health endpoint
-- **Hot Reload** - Fast development with ts-node-dev
-
-## 📁 Project Structure
+This service is part of an event-driven microservices architecture:
 
 ```
-.
-├── src/
-│   ├── config/
-│   │   ├── env.ts           # Environment configuration
-│   │   └── swagger.ts       # Swagger setup
-│   ├── controllers/
-│   │   └── health.controller.ts
-│   ├── middlewares/
-│   │   └── error.middleware.ts
-│   ├── routes/
-│   │   └── health.route.ts
-│   ├── types/
-│   │   └── AppError.ts
-│   ├── utils/
-│   │   └── logger.ts
-│   ├── app.ts              # Express app setup
-│   └── index.ts            # Server entry point
-├── docs/
-│   └── swagger.json        # Auto-generated
-├── .env.example
-├── .dockerignore
-├── Dockerfile
-├── package.json
-└── tsconfig.json
+┌─────────────────┐     order.created      ┌──────────────────┐
+│  Order Service  │ ─────────────────────► │ Delivery Service │
+└─────────────────┘     order.cancelled    └──────────────────┘
+                                                    │
+                                                    │ delivery.status.updated
+                                                    ▼
+                                           ┌──────────────────┐
+                                           │  Other Services  │
+                                           └──────────────────┘
 ```
 
-## 🚀 Quick Start
+## Tech Stack
 
-### 1. Install Dependencies
+- **Runtime**: Node.js
+- **Framework**: Express
+- **Language**: TypeScript (strict mode)
+- **Database**: MySQL (service-owned)
+- **Message Broker**: RabbitMQ
+- **API Documentation**: Swagger (OpenAPI 3.0)
+- **Logging**: Winston
+
+## Events
+
+### Consumed Events (via RabbitMQ)
+
+| Event | Routing Key | Action |
+|-------|-------------|--------|
+| Order Created | `order.created` | Create delivery with status `ASSIGNED` |
+| Order Cancelled | `order.cancelled` | Update delivery status to `CANCELLED` |
+
+### Published Events (to RabbitMQ)
+
+| Event | Routing Key | Trigger |
+|-------|-------------|---------|
+| Delivery Status Updated | `delivery.status.updated` | When delivery status changes |
+
+**Exchange**: `order.events` (direct)
+
+## Database Schema
+
+```sql
+CREATE TABLE delivery (
+  id VARCHAR(36) PRIMARY KEY,
+  orderId VARCHAR(255) NOT NULL UNIQUE,
+  status ENUM('ASSIGNED', 'IN_TRANSIT', 'DELIVERED', 'CANCELLED') NOT NULL DEFAULT 'ASSIGNED',
+  assignedAt DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updatedAt DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  INDEX idx_orderId (orderId),
+  INDEX idx_status (status)
+);
+```
+
+## Delivery Status Flow
+
+```
+┌──────────┐     ┌────────────┐     ┌───────────┐
+│ ASSIGNED │ ──► │ IN_TRANSIT │ ──► │ DELIVERED │
+└──────────┘     └────────────┘     └───────────┘
+     │                 │
+     │                 │
+     ▼                 ▼
+┌───────────────────────┐
+│      CANCELLED        │
+└───────────────────────┘
+```
+
+## API Endpoints
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/health` | Health check |
+| GET | `/deliveries` | List all deliveries (limit 100) |
+| GET | `/deliveries/:orderId` | Get delivery by order ID |
+| PATCH | `/deliveries/:orderId/status` | Update delivery status |
+| GET | `/docs` | Swagger API documentation |
+
+## Getting Started
+
+### Prerequisites
+
+- Node.js 18+
+- MySQL 8.0+
+- RabbitMQ 3.x
+
+### Installation
 
 ```bash
+# Install dependencies
 npm install
-```
 
-### 2. Configure Environment
-
-Copy the example environment file and customize it:
-
-```bash
+# Copy environment file
 cp .env.example .env
+
+# Edit .env with your configuration
 ```
 
-Edit `.env`:
+### Environment Variables
 
-```env
-PORT=3000
-SERVICE_NAME=UserService
-NODE_ENV=development
-```
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `PORT` | Server port | `4500` |
+| `NODE_ENV` | Environment | `development` |
+| `SERVICE_NAME` | Service identifier | `delivery-service` |
+| `MYSQL_HOST` | MySQL host | `localhost` |
+| `MYSQL_PORT` | MySQL port | `3306` |
+| `MYSQL_USER` | MySQL username | `root` |
+| `MYSQL_PASSWORD` | MySQL password | - |
+| `MYSQL_DATABASE` | MySQL database name | `delivery_db` |
+| `RABBITMQ_URL` | RabbitMQ connection URL | `amqp://localhost:5672` |
 
-### 3. Run in Development
+### Running the Service
 
 ```bash
+# Development mode (with hot reload)
 npm run dev
+
+# Build for production
+npm run build
+
+# Production mode
+npm start
 ```
 
-The service will start on `http://localhost:3000`
-
-### 4. Access Documentation
-
-- **API Docs**: http://localhost:3000/docs
-- **Health Check**: http://localhost:3000/health
-
-## 📝 Available Scripts
-
-| Script          | Description                              |
-| --------------- | ---------------------------------------- |
-| `npm run dev`   | Start development server with hot reload |
-| `npm run build` | Build TypeScript to JavaScript           |
-| `npm start`     | Start production server                  |
-
-## 🐳 Docker
-
-### Build Image
+### Docker
 
 ```bash
-docker build -t your-service-name:latest .
+# Build image
+docker build -t delivery-service .
+
+# Run container
+docker run -d \
+  -p 4500:4500 \
+  -e MYSQL_HOST=host.docker.internal \
+  -e MYSQL_PASSWORD=your_password \
+  -e RABBITMQ_URL=amqp://host.docker.internal:5672 \
+  delivery-service
 ```
 
-### Run Container
+## API Examples
+
+### Get Delivery by Order ID
 
 ```bash
-docker run -p 3000:3000 \
-  -e SERVICE_NAME="YourService" \
-  -e PORT=3000 \
-  your-service-name:latest
+curl http://localhost:4500/deliveries/order-123
 ```
 
-### Docker Compose Example
-
-```yaml
-version: "3.8"
-services:
-  user-service:
-    build: .
-    ports:
-      - "3001:3000"
-    environment:
-      - SERVICE_NAME=UserService
-      - PORT=3000
-      - NODE_ENV=production
-```
-
-## 🔧 Customization Guide
-
-### For Each New Service:
-
-1. **Update Environment Variables**
-
-   ```bash
-   # In .env
-   SERVICE_NAME=ProductService  # Change to your service name
-   PORT=3001                    # Use different port if needed
-   ```
-
-2. **Add Your Routes**
-
-   ```typescript
-   // src/routes/product.route.ts
-   import { Router } from "express";
-
-   const router = Router();
-   router.get("/products" /* your controller */);
-
-   export default router;
-   ```
-
-3. **Register Routes in app.ts**
-
-   ```typescript
-   import productRoute from "./routes/product.route";
-   this.app.use("/api", productRoute);
-   ```
-
-4. **Add Controllers**
-
-   ```typescript
-   // src/controllers/product.controller.ts
-   export class ProductController {
-     public static async getProducts(req: Request, res: Response) {
-       // Your logic here
-     }
-   }
-   ```
-
-5. **Update Docker/Package Name**
-   - Change `"name"` in `package.json`
-   - Update Docker image tag when building
-
-## 📚 API Documentation
-
-Swagger documentation is automatically generated from JSDoc comments in your route files.
-
-### Example Route Documentation:
-
-```typescript
-/**
- * @swagger
- * /api/products:
- *   get:
- *     summary: Get all products
- *     tags:
- *       - Products
- *     responses:
- *       200:
- *         description: List of products
- */
-router.get("/products", ProductController.getProducts);
-```
-
-## 🔐 Security Features
-
-- **Helmet**: Sets various HTTP headers for security
-- **CORS**: Configurable cross-origin resource sharing
-- **Input Validation**: Ready for validation middleware (add express-validator)
-- **Error Handling**: Prevents information leakage in production
-
-## 📊 Logging
-
-Winston logger includes:
-
-- Timestamp on all logs
-- Service name in metadata
-- Colored console output in development
-- JSON format for production
-- Request logging middleware
-
-### Usage:
-
-```typescript
-import logger from "./utils/logger";
-
-logger.info("User created", { userId: 123 });
-logger.error("Failed to process", { error: err.message });
-```
-
-## 🧪 Adding Tests (Recommended)
-
-Add to `package.json`:
-
+Response:
 ```json
 {
-  "devDependencies": {
-    "jest": "^29.7.0",
-    "@types/jest": "^29.5.11",
-    "ts-jest": "^29.1.1",
-    "supertest": "^6.3.3",
-    "@types/supertest": "^6.0.2"
-  },
-  "scripts": {
-    "test": "jest",
-    "test:watch": "jest --watch"
+  "success": true,
+  "data": {
+    "id": "550e8400-e29b-41d4-a716-446655440000",
+    "orderId": "order-123",
+    "status": "ASSIGNED",
+    "assignedAt": "2025-12-27T10:00:00.000Z",
+    "updatedAt": "2025-12-27T10:00:00.000Z"
   }
 }
 ```
 
-## 🔄 Deployment
-
-### Environment Variables for Production
-
-```env
-NODE_ENV=production
-PORT=3000
-SERVICE_NAME=YourService
-# Add database URLs, API keys, etc.
-```
-
-### Build for Production
+### Update Delivery Status
 
 ```bash
-npm run build
-npm start
+curl -X PATCH http://localhost:4500/deliveries/order-123/status \
+  -H "Content-Type: application/json" \
+  -d '{"status": "IN_TRANSIT"}'
 ```
 
-## 📦 Dependencies
+Response:
+```json
+{
+  "success": true,
+  "data": {
+    "id": "550e8400-e29b-41d4-a716-446655440000",
+    "orderId": "order-123",
+    "status": "IN_TRANSIT",
+    "assignedAt": "2025-12-27T10:00:00.000Z",
+    "updatedAt": "2025-12-27T10:30:00.000Z"
+  },
+  "message": "Delivery status updated to IN_TRANSIT"
+}
+```
 
-### Production:
+## Project Structure
 
-- `express` - Web framework
-- `dotenv` - Environment variables
-- `winston` - Logging
-- `cors` - Cross-origin resource sharing
-- `helmet` - Security headers
-- `multer` - File uploads (ready for use)
-- `swagger-ui-express` - API documentation UI
-- `swagger-jsdoc` - Swagger spec generation
+```
+src/
+├── index.ts                 # Application entry point
+├── app.ts                   # Express app configuration
+├── config/
+│   ├── env.ts              # Environment configuration
+│   ├── db.ts               # MySQL connection
+│   ├── rabbitmq.ts         # RabbitMQ connection
+│   └── swagger.ts          # Swagger configuration
+├── routes/
+│   ├── health.route.ts     # Health check route
+│   └── delivery.routes.ts  # Delivery API routes
+├── controllers/
+│   ├── health.controller.ts
+│   └── delivery.controller.ts
+├── services/
+│   └── delivery.service.ts # Business logic
+├── events/
+│   ├── consumer.ts         # RabbitMQ event consumer
+│   └── publisher.ts        # RabbitMQ event publisher
+├── types/
+│   ├── AppError.ts
+│   └── delivery.types.ts   # TypeScript interfaces
+├── middlewares/
+│   └── error.middleware.ts
+└── utils/
+    └── logger.ts           # Winston logger
+```
 
-### Development:
-
-- `typescript` - TypeScript compiler
-- `ts-node-dev` - Development server
-- `@types/*` - Type definitions
-
-## 🤝 Contributing
-
-This is a template project. Customize it for your specific microservice needs.
-
-## 📄 License
+## License
 
 ISC
-
----
-
-## 🎯 Service-Specific Examples
-
-### User Service
-
-```env
-SERVICE_NAME=UserService
-PORT=3001
-```
-
-### Product Service
-
-```env
-SERVICE_NAME=ProductService
-PORT=3002
-```
-
-### Order Service
-
-```env
-SERVICE_NAME=OrderService
-PORT=3003
-```
-
-And so on for Cart, Payment, Delivery, Notification, and Analytics services.
-
----
-
-**Happy Coding! 🚀**

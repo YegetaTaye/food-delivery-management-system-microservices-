@@ -5,9 +5,19 @@ const swaggerOptions: swaggerJsdoc.Options = {
   definition: {
     openapi: '3.0.0',
     info: {
-      title: config.serviceName,
+      title: 'Delivery Service API',
       version: '1.0.0',
-      description: `${config.serviceName} API Documentation`,
+      description: `${config.serviceName} - Handles delivery assignment and tracking for food delivery system. 
+      
+This service listens to order events from RabbitMQ and manages delivery lifecycle.
+
+## Events
+### Consumed
+- \`order.created\` - Creates a new delivery with ASSIGNED status
+- \`order.cancelled\` - Updates delivery status to CANCELLED
+
+### Published
+- \`delivery.status.updated\` - Published when delivery status changes`,
       contact: {
         name: 'API Support',
       },
@@ -18,8 +28,18 @@ const swaggerOptions: swaggerJsdoc.Options = {
         description: 'Development server',
       },
     ],
+    tags: [
+      {
+        name: 'Deliveries',
+        description: 'Delivery management endpoints',
+      },
+      {
+        name: 'Health',
+        description: 'Health check endpoints',
+      },
+    ],
   },
-  apis: ['./src/routes/*.ts', './dist/routes/*.js'], // Support both TS and compiled JS
+  apis: ['./src/routes/*.ts', './dist/routes/*.js'],
 };
 
 export const swaggerSpec = swaggerJsdoc(swaggerOptions);
