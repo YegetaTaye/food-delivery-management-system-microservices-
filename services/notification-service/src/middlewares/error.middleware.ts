@@ -8,10 +8,10 @@ interface ErrorResponse {
 }
 
 export const errorHandler = (
-  error: any,
+  error: Error & { status?: number; statusCode?: number },
   req: Request,
   res: Response,
-  next: NextFunction
+  _next: NextFunction
 ): Response => {
   const status = error.status || error.statusCode || 500;
   const message = error.message || 'Internal Server Error';
@@ -35,11 +35,4 @@ export const errorHandler = (
   }
 
   return res.status(status).json(response);
-};
-
-// Async error wrapper
-export const asyncHandler = (fn: Function) => {
-  return (req: Request, res: Response, next: NextFunction) => {
-    Promise.resolve(fn(req, res, next)).catch(next);
-  };
 };

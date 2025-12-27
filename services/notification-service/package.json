@@ -1,7 +1,7 @@
 {
-  "name": "microservice-skeleton",
+  "name": "notification-service",
   "version": "1.0.0",
-  "description": "Reusable Node.js + Express + TypeScript microservice skeleton",
+  "description": "Notification Service - Listens to domain events and simulates sending notifications",
   "main": "dist/index.js",
   "scripts": {
     "dev": "ts-node-dev --respawn --transpile-only src/index.ts",
@@ -10,30 +10,34 @@
   },
   "keywords": [
     "microservice",
+    "notification",
     "express",
     "typescript",
-    "nodejs"
+    "nodejs",
+    "rabbitmq"
   ],
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "express": "^4.18.2",
-    "dotenv": "^16.3.1",
-    "winston": "^3.11.0",
+    "amqplib": "^0.10.4",
     "cors": "^2.8.5",
+    "dotenv": "^16.3.1",
+    "express": "^4.18.2",
     "helmet": "^7.1.0",
-    "multer": "^1.4.5-lts.1",
+    "swagger-jsdoc": "^6.2.8",
     "swagger-ui-express": "^5.0.0",
-    "swagger-jsdoc": "^6.2.8"
+    "uuid": "^9.0.1",
+    "winston": "^3.11.0"
   },
   "devDependencies": {
-    "typescript": "^5.3.3",
-    "ts-node-dev": "^2.0.0",
-    "@types/node": "^20.10.5",
-    "@types/express": "^4.17.21",
+    "@types/amqplib": "^0.10.5",
     "@types/cors": "^2.8.17",
-    "@types/multer": "^1.4.11",
+    "@types/express": "^4.17.21",
+    "@types/node": "^20.10.5",
+    "@types/swagger-jsdoc": "^6.0.4",
     "@types/swagger-ui-express": "^4.1.6",
-    "@types/swagger-jsdoc": "^6.0.4"
+    "@types/uuid": "^9.0.8",
+    "ts-node-dev": "^2.0.0",
+    "typescript": "^5.3.3"
   }
 }
