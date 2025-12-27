@@ -32,4 +32,3 @@ const router = Router();
 router.get('/health', HealthController.getHealth);
 
 export default router;
-

@@ -1,0 +1,47 @@
+name: CI Pipeline
+
+on:
+  push:
+    branches:
+      - dev
+      - main
+  pull_request:
+    branches:
+      - dev
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        service:
+          - user-service
+          - product-service
+          - cart-service
+          - order-service
+          - payment-service
+          - delivery-service
+          - notification-service
+          - analytics-service
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install Dependencies
+        working-directory: ./services/${{ matrix.service }}
+        run: npm install
+
+      - name: Type Check
+        working-directory: ./services/${{ matrix.service }}
+        run: npx tsc --noEmit
+
+      - name: Build Service
+        working-directory: ./services/${{ matrix.service }}
+        run: npm run build

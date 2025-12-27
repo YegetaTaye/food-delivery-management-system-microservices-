@@ -24,10 +24,11 @@ const getEnvConfig = (): EnvConfig => {
       url: process.env.RABBITMQ_URL || 'amqp://localhost:5672',
     },
     database: {
-      url: process.env.DATABASE_URL || 'mysql://root:password@localhost:3306/analytics_db',
+      url:
+        process.env.DATABASE_URL ||
+        'mysql://root:password@localhost:3306/analytics_db',
     },
   };
 };
 
 export const config = getEnvConfig();
-

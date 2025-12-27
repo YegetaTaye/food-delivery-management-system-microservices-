@@ -52,4 +52,3 @@ Events are stored with:
 };
 
 export const swaggerSpec = swaggerJsdoc(swaggerOptions);
-

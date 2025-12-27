@@ -1,0 +1,76 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: product-service
+  namespace: dev
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: product-service
+  template:
+    metadata:
+      labels:
+        app: product-service
+    spec:
+      containers:
+        - name: product-service
+          image: yegeta100/product-service:latest
+          ports:
+            - containerPort: 3002
+          env:
+            - name: PORT
+              value: "3002"
+
+            - name: NODE_ENV
+              valueFrom:
+                configMapKeyRef:
+                  name: service-common-config
+                  key: NODE_ENV
+
+            - name: RABBITMQ_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: service-common-config
+                  key: RABBITMQ_URL
+
+            - name: JWT_SECRET
+              valueFrom:
+                configMapKeyRef:
+                  name: service-common-config
+                  key: JWT_SECRET
+
+            - name: JWT_EXPIRES_IN
+              valueFrom:
+                configMapKeyRef:
+                  name: service-common-config
+                  key: JWT_EXPIRES_IN
+
+            - name: JWT_REFRESH_EXPIRES_IN
+              valueFrom:
+                configMapKeyRef:
+                  name: service-common-config
+                  key: JWT_REFRESH_EXPIRES_IN
+
+            - name: MYSQL_HOST
+              value: "product-db.dev.svc.cluster.local"
+
+            - name: MYSQL_USER
+              valueFrom:
+                secretKeyRef:
+                  name: product-db-secret
+                  key: MYSQL_USER
+
+            - name: MYSQL_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: product-db-secret
+                  key: MYSQL_PASSWORD
+
+            - name: MYSQL_DATABASE
+              value: "product_db"
+
+            - name: DATABASE_URL
+              value: "mysql://$(MYSQL_USER):$(MYSQL_PASSWORD)@$(MYSQL_HOST):3306/$(MYSQL_DATABASE)"
+
+          imagePullPolicy: IfNotPresent

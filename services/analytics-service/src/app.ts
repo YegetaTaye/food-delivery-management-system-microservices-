@@ -25,14 +25,14 @@ class App {
   private initializeMiddlewares(): void {
     // Security middleware
     this.app.use(helmet());
-    
+
     // CORS middleware
     this.app.use(cors());
-    
+
     // Body parsing middleware
     this.app.use(express.json());
     this.app.use(express.urlencoded({ extended: true }));
-    
+
     // Request logging
     this.app.use((req: Request, _res: Response, next) => {
       logger.info(`${req.method} ${req.path}`, {
@@ -46,16 +46,20 @@ class App {
   private initializeRoutes(): void {
     // Health check route
     this.app.use('/', healthRoute);
-    
+
     // Analytics routes
     this.app.use('/analytics', analyticsRoutes);
-    
+
     // Swagger documentation
-    this.app.use('/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
-      explorer: true,
-      customCss: '.swagger-ui .topbar { display: none }',
-      customSiteTitle: `${config.serviceName} API Docs`,
-    }));
+    this.app.use(
+      '/docs',
+      swaggerUi.serve,
+      swaggerUi.setup(swaggerSpec, {
+        explorer: true,
+        customCss: '.swagger-ui .topbar { display: none }',
+        customSiteTitle: `${config.serviceName} API Docs`,
+      })
+    );
 
     // 404 handler
     this.app.use('*', (req: Request, res: Response) => {
@@ -72,7 +76,7 @@ class App {
     if (!fs.existsSync(docsDir)) {
       fs.mkdirSync(docsDir, { recursive: true });
     }
-    
+
     const swaggerPath = path.join(docsDir, 'swagger.json');
     fs.writeFileSync(swaggerPath, JSON.stringify(swaggerSpec, null, 2));
     logger.info(`Swagger documentation generated at ${swaggerPath}`);
@@ -84,4 +88,3 @@ class App {
 }
 
 export default new App().app;
-

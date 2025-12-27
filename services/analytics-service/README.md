@@ -16,13 +16,13 @@ The Analytics Service is responsible for:
 ┌─────────────────┐     order.created      ┌───────────────────────┐
 │  Order Service  │ ─────────────────────► │                       │
 └─────────────────┘   order.cancelled      │                       │
-                     order.status.updated  │   Analytics Service   │
+                    order.status.updated  │   Analytics Service   │
 ┌─────────────────┐                        │                       │
 │ Payment Service │   payment.completed    │   ┌───────────────┐   │
 └─────────────────┘ ─────────────────────► │   │    MySQL      │   │
-                                           │   │   (Prisma)    │   │
-                                           │   └───────────────┘   │
-                                           └───────────────────────┘
+                                          │   │   (Prisma)    │   │
+                                          │   └───────────────┘   │
+                                          └───────────────────────┘
 ```
 
 ## Tech Stack
