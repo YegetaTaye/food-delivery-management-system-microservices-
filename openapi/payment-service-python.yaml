@@ -1,0 +1,231 @@
+openapi: 3.0.0
+info:
+  title: Payment Service API (Python)
+  version: 1.0.0
+  description: |
+    A FastAPI-based microservice for processing payments in a food delivery system.
+    
+    ## Features
+    - Payment processing simulation
+    - Event-driven communication via RabbitMQ
+    - MySQL database for payment records
+    
+    ## Events
+    **Consumed:** `order.created`
+    **Published:** `payment.success`, `payment.failed`
+  contact:
+    name: API Support
+
+servers:
+  - url: http://localhost:4600
+    description: Development server
+
+tags:
+  - name: Health
+    description: Health check endpoints
+  - name: Payments
+    description: Payment processing endpoints
+
+paths:
+  /health:
+    get:
+      tags:
+        - Health
+      summary: Health check
+      description: Returns the health status of the Payment Service
+      operationId: healthCheck
+      responses:
+        '200':
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+
+  /payments:
+    post:
+      tags:
+        - Payments
+      summary: Create a new payment
+      description: |
+        Process a payment for an order.
+        The payment will be simulated with a random SUCCESS/FAILED result.
+        A corresponding event will be published to RabbitMQ.
+      operationId: createPayment
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PaymentCreate'
+      responses:
+        '201':
+          description: Payment created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaymentResponse'
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /payments/{payment_id}:
+    get:
+      tags:
+        - Payments
+      summary: Get payment by ID
+      description: Retrieve a payment record by its unique ID
+      operationId: getPayment
+      parameters:
+        - name: payment_id
+          in: path
+          required: true
+          description: The unique payment ID (UUID)
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Payment found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaymentResponse'
+        '404':
+          description: Payment not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+components:
+  schemas:
+    PaymentCreate:
+      type: object
+      required:
+        - order_id
+        - amount
+      properties:
+        order_id:
+          type: string
+          description: The order ID to process payment for
+          example: order-123
+        amount:
+          type: number
+          format: float
+          minimum: 0.01
+          description: Payment amount
+          example: 99.99
+        payment_method:
+          type: string
+          enum:
+            - CARD
+            - CASH
+            - SIMULATED
+          default: SIMULATED
+          description: Payment method
+          example: SIMULATED
+
+    PaymentResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Payment ID
+          example: 550e8400-e29b-41d4-a716-446655440000
+        order_id:
+          type: string
+          description: Order ID
+          example: order-123
+        amount:
+          type: number
+          format: float
+          description: Payment amount
+          example: 99.99
+        status:
+          type: string
+          enum:
+            - PENDING
+            - SUCCESS
+            - FAILED
+          description: Payment status
+          example: SUCCESS
+        method:
+          type: string
+          enum:
+            - CARD
+            - CASH
+            - SIMULATED
+          description: Payment method
+          example: SIMULATED
+        created_at:
+          type: string
+          format: date-time
+          description: Creation timestamp
+          example: '2025-12-27T10:00:00'
+
+    PaymentEvent:
+      type: object
+      description: Event published to RabbitMQ
+      properties:
+        payment_id:
+          type: string
+          format: uuid
+          example: 550e8400-e29b-41d4-a716-446655440000
+        order_id:
+          type: string
+          example: order-123
+        status:
+          type: string
+          enum:
+            - SUCCESS
+            - FAILED
+          example: SUCCESS
+        amount:
+          type: number
+          format: float
+          example: 99.99
+        timestamp:
+          type: string
+          format: date-time
+          example: '2025-12-27T10:00:00.000Z'
+
+    HealthResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          description: Service health status
+          example: ok
+        service:
+          type: string
+          description: Service name
+          example: payment-service
+        version:
+          type: string
+          description: Service version
+          example: 1.0.0
+        timestamp:
+          type: string
+          format: date-time
+          description: Current timestamp
+          example: '2025-12-27T10:00:00'
+
+    ErrorResponse:
+      type: object
+      properties:
+        detail:
+          type: string
+          description: Error message
+          example: Payment not found
+
