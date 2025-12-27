@@ -1,323 +1,189 @@
-# Node.js + Express + TypeScript Microservice Skeleton
+# Payment Service
 
-A production-ready, reusable microservice skeleton built with Node.js, Express, and TypeScript. This template is designed for distributed microservices architectures and can be easily customized for different services.
+A FastAPI-based microservice for processing payments in a food delivery platform.
 
-## 🎯 Designed For
+## Features
 
-This skeleton can be reused for multiple microservices including:
+- **Payment Processing**: Simulated payment processing with 80% success rate
+- **Event-Driven**: Consumes order events and publishes payment events via RabbitMQ
+- **Database**: MySQL for persistent payment records
+- **REST API**: FastAPI with automatic OpenAPI documentation
+- **Health Checks**: Built-in health endpoint for Kubernetes
 
-- User Service
-- Product Service
-- Cart Service
-- Order Service
-- Payment Service
-- Delivery Service
-- Notification Service
-- Analytics Service
+## Tech Stack
 
-## ✨ Features
+- Python 3.11
+- FastAPI
+- SQLAlchemy ORM
+- MySQL
+- RabbitMQ (Pika)
+- Pydantic
+- Uvicorn
 
-- **TypeScript** - Type-safe code with strict mode enabled
-- **Express.js** - Fast, unopinionated web framework
-- **Winston Logger** - Structured logging with timestamps and JSON format
-- **Swagger/OpenAPI** - Auto-generated API documentation
-- **Docker** - Multi-stage builds for optimized container images
-- **Error Handling** - Global error middleware with async support
-- **Security** - Helmet and CORS enabled by default
-- **Health Check** - Built-in health endpoint
-- **Hot Reload** - Fast development with ts-node-dev
-
-## 📁 Project Structure
+## Project Structure
 
 ```
-.
-├── src/
-│   ├── config/
-│   │   ├── env.ts           # Environment configuration
-│   │   └── swagger.ts       # Swagger setup
-│   ├── controllers/
-│   │   └── health.controller.ts
-│   ├── middlewares/
-│   │   └── error.middleware.ts
-│   ├── routes/
-│   │   └── health.route.ts
-│   ├── types/
-│   │   └── AppError.ts
-│   ├── utils/
-│   │   └── logger.ts
-│   ├── app.ts              # Express app setup
-│   └── index.ts            # Server entry point
-├── docs/
-│   └── swagger.json        # Auto-generated
-├── .env.example
-├── .dockerignore
-├── Dockerfile
-├── package.json
-└── tsconfig.json
+app/
+├── main.py              # FastAPI application entry point
+├── api/
+│   └── payments.py      # Payment endpoints
+├── models/
+│   └── payment.py       # Payment database model
+├── db/
+│   └── session.py       # Database session management
+├── messaging/
+│   └── publisher.py     # RabbitMQ event publisher
+├── consumer.py          # RabbitMQ event consumer
+└── core/
+    └── config.py        # Configuration settings
 ```
 
-## 🚀 Quick Start
+## Database Schema
 
-### 1. Install Dependencies
+**payments** table:
+- `id` (UUID, Primary Key)
+- `order_id` (String, Indexed)
+- `amount` (Decimal)
+- `status` (Enum: PENDING, SUCCESS, FAILED)
+- `method` (Enum: CARD, CASH, SIMULATED)
+- `created_at` (DateTime)
 
+## API Endpoints
+
+### POST /payments
+Create a new payment
+
+**Request:**
+```json
+{
+  "order_id": "order-123",
+  "amount": 100.50,
+  "payment_method": "SIMULATED"
+}
+```
+
+**Response:**
+```json
+{
+  "payment_id": "uuid",
+  "order_id": "order-123",
+  "amount": 100.50,
+  "status": "SUCCESS",
+  "method": "SIMULATED",
+  "created_at": "2024-01-01T12:00:00"
+}
+```
+
+### GET /payments/{payment_id}
+Get payment details
+
+### GET /health
+Health check endpoint
+
+### GET /docs
+Swagger UI documentation
+
+## Events
+
+### Consumed Events
+- `order.created` / `orders.created` - Automatically processes payment when order is created
+
+### Published Events
+- `payment.success` - Payment processed successfully
+- `payment.failed` - Payment processing failed
+
+**Event Payload:**
+```json
+{
+  "payment_id": "uuid",
+  "order_id": "order-123",
+  "status": "SUCCESS",
+  "amount": 100.50,
+  "timestamp": "2024-01-01T12:00:00"
+}
+```
+
+## Setup
+
+### Local Development
+
+1. Install dependencies:
 ```bash
-npm install
+pip install -r requirements.txt
 ```
 
-### 2. Configure Environment
-
-Copy the example environment file and customize it:
-
+2. Set environment variables (copy from .env.example):
 ```bash
 cp .env.example .env
 ```
 
-Edit `.env`:
-
-```env
-PORT=3000
-SERVICE_NAME=UserService
-NODE_ENV=development
+3. Run the service:
+```bash
+uvicorn app.main:app --reload --port 8003
 ```
 
-### 3. Run in Development
+4. Run the consumer (in separate terminal):
+```bash
+python -m app.consumer
+```
+
+### Docker Compose
+
+Run the complete stack (service + MySQL + RabbitMQ):
 
 ```bash
-npm run dev
+docker-compose up -d
 ```
 
-The service will start on `http://localhost:3000`
+Access:
+- API: http://localhost:8003
+- Swagger UI: http://localhost:8003/docs
+- RabbitMQ Management: http://localhost:15672 (guest/guest)
 
-### 4. Access Documentation
+## Environment Variables
 
-- **API Docs**: http://localhost:3000/docs
-- **Health Check**: http://localhost:3000/health
+| Variable | Description | Default |
+|----------|-------------|---------|
+| DATABASE_URL | MySQL connection string | mysql+pymysql://root:password@localhost:3306/payment_db |
+| RABBITMQ_URL | RabbitMQ connection URL | amqp://guest:guest@localhost:5672/ |
+| RABBITMQ_EXCHANGE | RabbitMQ exchange name | food_delivery |
+| RABBITMQ_QUEUE | RabbitMQ queue name | payment_queue |
+| SERVICE_NAME | Service identifier | payment-service |
+| SERVICE_PORT | Service port | 8003 |
 
-## 📝 Available Scripts
+## Kubernetes Deployment
 
-| Script          | Description                              |
-| --------------- | ---------------------------------------- |
-| `npm run dev`   | Start development server with hot reload |
-| `npm run build` | Build TypeScript to JavaScript           |
-| `npm start`     | Start production server                  |
+The service is designed to run in Kubernetes with:
+- MySQL as a StatefulSet or external managed database
+- RabbitMQ as a StatefulSet or external message broker
+- ConfigMaps for configuration
+- Secrets for sensitive data
 
-## 🐳 Docker
+## Testing
 
-### Build Image
+Test the API:
 
 ```bash
-docker build -t your-service-name:latest .
+# Create payment
+curl -X POST http://localhost:8003/payments \
+  -H "Content-Type: application/json" \
+  -d '{
+    "order_id": "order-123",
+    "amount": 100.50,
+    "payment_method": "SIMULATED"
+  }'
+
+# Get payment
+curl http://localhost:8003/payments/{payment_id}
+
+# Health check
+curl http://localhost:8003/health
 ```
 
-### Run Container
+## Architecture Notes
 
-```bash
-docker run -p 3000:3000 \
-  -e SERVICE_NAME="YourService" \
-  -e PORT=3000 \
-  your-service-name:latest
-```
-
-### Docker Compose Example
-
-```yaml
-version: "3.8"
-services:
-  user-service:
-    build: .
-    ports:
-      - "3001:3000"
-    environment:
-      - SERVICE_NAME=UserService
-      - PORT=3000
-      - NODE_ENV=production
-```
-
-## 🔧 Customization Guide
-
-### For Each New Service:
-
-1. **Update Environment Variables**
-
-   ```bash
-   # In .env
-   SERVICE_NAME=ProductService  # Change to your service name
-   PORT=3001                    # Use different port if needed
-   ```
-
-2. **Add Your Routes**
-
-   ```typescript
-   // src/routes/product.route.ts
-   import { Router } from "express";
-
-   const router = Router();
-   router.get("/products" /* your controller */);
-
-   export default router;
-   ```
-
-3. **Register Routes in app.ts**
-
-   ```typescript
-   import productRoute from "./routes/product.route";
-   this.app.use("/api", productRoute);
-   ```
-
-4. **Add Controllers**
-
-   ```typescript
-   // src/controllers/product.controller.ts
-   export class ProductController {
-     public static async getProducts(req: Request, res: Response) {
-       // Your logic here
-     }
-   }
-   ```
-
-5. **Update Docker/Package Name**
-   - Change `"name"` in `package.json`
-   - Update Docker image tag when building
-
-## 📚 API Documentation
-
-Swagger documentation is automatically generated from JSDoc comments in your route files.
-
-### Example Route Documentation:
-
-```typescript
-/**
- * @swagger
- * /api/products:
- *   get:
- *     summary: Get all products
- *     tags:
- *       - Products
- *     responses:
- *       200:
- *         description: List of products
- */
-router.get("/products", ProductController.getProducts);
-```
-
-## 🔐 Security Features
-
-- **Helmet**: Sets various HTTP headers for security
-- **CORS**: Configurable cross-origin resource sharing
-- **Input Validation**: Ready for validation middleware (add express-validator)
-- **Error Handling**: Prevents information leakage in production
-
-## 📊 Logging
-
-Winston logger includes:
-
-- Timestamp on all logs
-- Service name in metadata
-- Colored console output in development
-- JSON format for production
-- Request logging middleware
-
-### Usage:
-
-```typescript
-import logger from "./utils/logger";
-
-logger.info("User created", { userId: 123 });
-logger.error("Failed to process", { error: err.message });
-```
-
-## 🧪 Adding Tests (Recommended)
-
-Add to `package.json`:
-
-```json
-{
-  "devDependencies": {
-    "jest": "^29.7.0",
-    "@types/jest": "^29.5.11",
-    "ts-jest": "^29.1.1",
-    "supertest": "^6.3.3",
-    "@types/supertest": "^6.0.2"
-  },
-  "scripts": {
-    "test": "jest",
-    "test:watch": "jest --watch"
-  }
-}
-```
-
-## 🔄 Deployment
-
-### Environment Variables for Production
-
-```env
-NODE_ENV=production
-PORT=3000
-SERVICE_NAME=YourService
-# Add database URLs, API keys, etc.
-```
-
-### Build for Production
-
-```bash
-npm run build
-npm start
-```
-
-## 📦 Dependencies
-
-### Production:
-
-- `express` - Web framework
-- `dotenv` - Environment variables
-- `winston` - Logging
-- `cors` - Cross-origin resource sharing
-- `helmet` - Security headers
-- `multer` - File uploads (ready for use)
-- `swagger-ui-express` - API documentation UI
-- `swagger-jsdoc` - Swagger spec generation
-
-### Development:
-
-- `typescript` - TypeScript compiler
-- `ts-node-dev` - Development server
-- `@types/*` - Type definitions
-
-## 🤝 Contributing
-
-This is a template project. Customize it for your specific microservice needs.
-
-## 📄 License
-
-ISC
-
----
-
-## 🎯 Service-Specific Examples
-
-### User Service
-
-```env
-SERVICE_NAME=UserService
-PORT=3001
-```
-
-### Product Service
-
-```env
-SERVICE_NAME=ProductService
-PORT=3002
-```
-
-### Order Service
-
-```env
-SERVICE_NAME=OrderService
-PORT=3003
-```
-
-And so on for Cart, Payment, Delivery, Notification, and Analytics services.
-
----
-
-**Happy Coding! 🚀**
+- **Database Isolation**: Payment service has its own MySQL database
+- **Event-Driven**: No direct API calls to other services
+- **Idempotency**: Payment records are unique per order
+- **Simulation**: 80% success rate for demonstration purposes
+- **Scalability**: Stateless design allows horizontal scaling
