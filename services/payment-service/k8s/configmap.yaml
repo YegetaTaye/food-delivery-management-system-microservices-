@@ -1,8 +1,0 @@
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: payment-service-config
-data:
-  rabbitmq-url: "amqp://guest:guest@rabbitmq:5672/"
-  rabbitmq-exchange: "food_delivery"
-  rabbitmq-queue: "payment_queue"
