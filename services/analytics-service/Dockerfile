@@ -1,63 +1,70 @@
 # Build stage
-FROM node:20-alpine AS builder
+FROM node:18-alpine AS builder
 
+# Install OpenSSL for Prisma
+RUN apk add --no-cache openssl
+
+# Set working directory
 WORKDIR /app
 
 # Copy package files
 COPY package*.json ./
-COPY prisma ./prisma/
+
+# Copy Prisma schema first (needed for postinstall)
+COPY prisma ./prisma
 
 # Install dependencies
 RUN npm ci
 
-# Generate Prisma client
-RUN npx prisma generate
-
 # Copy source code
 COPY . .
+
+# Generate Prisma Client
+RUN npx prisma generate
 
 # Build TypeScript
 RUN npm run build
 
 # Production stage
-FROM node:20-alpine AS production
+FROM node:18-alpine
 
+# Install OpenSSL for Prisma
+RUN apk add --no-cache openssl
+
+# Set working directory
 WORKDIR /app
-
-# Create non-root user
-RUN addgroup -g 1001 -S nodejs && \
-    adduser -S nodejs -u 1001
 
 # Copy package files
 COPY package*.json ./
-COPY prisma ./prisma/
+
+# Copy Prisma schema for migrations
+COPY --from=builder /app/prisma ./prisma
 
 # Install production dependencies only
-RUN npm ci --only=production && npm cache clean --force
+RUN npm ci --only=production
 
-# Generate Prisma client
+# Generate Prisma Client for production
 RUN npx prisma generate
 
-# Copy built application
+# Copy built files from builder
 COPY --from=builder /app/dist ./dist
 
-# Create docs directory
-RUN mkdir -p docs && chown -R nodejs:nodejs /app
+# Create a non-root user
+RUN addgroup -g 1001 -S nodejs && \
+  adduser -S nodejs -u 1001
+
+# Change ownership
+RUN chown -R nodejs:nodejs /app
 
 # Switch to non-root user
 USER nodejs
 
-# Environment variables
-ENV NODE_ENV=production
-ENV PORT=4700
-ENV SERVICE_NAME=analytics-service
-
 # Expose port
-EXPOSE 4700
+EXPOSE 3000
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-  CMD wget --no-verbose --tries=1 --spider http://localhost:4700/health || exit 1
+  CMD node -e "require('http').get('http://localhost:3000/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"
 
 # Start the application
 CMD ["node", "dist/index.js"]
