@@ -1,17 +1,27 @@
 {
   "openapi": "3.0.0",
   "info": {
-    "title": "MicroserviceName",
+    "title": "Notification Service API",
     "version": "1.0.0",
-    "description": "MicroserviceName API Documentation",
+    "description": "notification-service - Listens to domain events and simulates sending notifications.\n      \nThis is an event-driven service that consumes events from RabbitMQ and logs notifications.\n\n## Events Consumed (via RabbitMQ)\n\n| Event | Routing Key | Description |\n|-------|-------------|-------------|\n| Order Created | `order.created` | New order placed |\n| Order Status Updated | `order.status.updated` | Order status changed |\n| Payment Completed | `payment.completed` | Payment processed |\n\n## How It Works\n\n1. Events are consumed from the `order.events` exchange\n2. Each event triggers a simulated notification\n3. Notifications are stored in-memory and logged\n4. No actual email/SMS is sent (simulation only)",
     "contact": {
       "name": "API Support"
     }
   },
   "servers": [
     {
-      "url": "http://localhost:3000",
+      "url": "http://localhost:4600",
       "description": "Development server"
+    }
+  ],
+  "tags": [
+    {
+      "name": "Notifications",
+      "description": "Notification management endpoints"
+    },
+    {
+      "name": "Health",
+      "description": "Health check endpoints"
     }
   ],
   "paths": {
@@ -49,8 +59,170 @@
           }
         }
       }
+    },
+    "/notifications": {
+      "get": {
+        "summary": "Get all notifications",
+        "description": "Retrieve notifications from in-memory store. Supports filtering by userId or eventName.",
+        "tags": [
+          "Notifications"
+        ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "limit",
+            "schema": {
+              "type": "integer",
+              "default": 100
+            },
+            "description": "Maximum number of notifications to return"
+          },
+          {
+            "in": "query",
+            "name": "userId",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Filter by user ID"
+          },
+          {
+            "in": "query",
+            "name": "eventName",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "order.created",
+                "order.status.updated",
+                "payment.completed"
+              ]
+            },
+            "description": "Filter by event name"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of notifications",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotificationListResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        }
+      }
+    },
+    "/notifications/stats": {
+      "get": {
+        "summary": "Get notification statistics",
+        "description": "Get counts of notifications grouped by event type",
+        "tags": [
+          "Notifications"
+        ],
+        "responses": {
+          "200": {
+            "description": "Notification statistics",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotificationStatsResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        }
+      }
     }
   },
-  "components": {},
-  "tags": []
+  "components": {
+    "schemas": {
+      "Notification": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Unique notification identifier"
+          },
+          "userId": {
+            "type": "string",
+            "description": "User who received the notification"
+          },
+          "eventName": {
+            "type": "string",
+            "description": "Event that triggered the notification",
+            "enum": [
+              "order.created",
+              "order.status.updated",
+              "payment.completed"
+            ]
+          },
+          "message": {
+            "type": "string",
+            "description": "Notification message content"
+          },
+          "metadata": {
+            "type": "object",
+            "description": "Additional event data"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "When the notification was created"
+          }
+        }
+      },
+      "NotificationListResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Notification"
+            }
+          },
+          "count": {
+            "type": "integer",
+            "description": "Number of notifications returned"
+          },
+          "total": {
+            "type": "integer",
+            "description": "Total notifications in store"
+          }
+        }
+      },
+      "NotificationStatsResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "data": {
+            "type": "object",
+            "properties": {
+              "total": {
+                "type": "integer"
+              },
+              "byEventType": {
+                "type": "object",
+                "additionalProperties": {
+                  "type": "integer"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
 }

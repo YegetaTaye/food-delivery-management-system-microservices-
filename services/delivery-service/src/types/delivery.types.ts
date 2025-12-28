@@ -1,17 +1,16 @@
-export enum DeliveryStatus {
-  ASSIGNED = 'ASSIGNED',
-  IN_TRANSIT = 'IN_TRANSIT',
-  DELIVERED = 'DELIVERED',
-  CANCELLED = 'CANCELLED',
-}
+import { Delivery as PrismaDelivery, DeliveryStatus as PrismaDeliveryStatus } from '@prisma/client';
 
-export interface Delivery {
-  id: string;
-  orderId: string;
-  status: DeliveryStatus;
-  assignedAt: Date;
-  updatedAt: Date;
-}
+// Re-export Prisma types
+export type Delivery = PrismaDelivery;
+export type DeliveryStatus = PrismaDeliveryStatus;
+export const DeliveryStatus = {
+  PENDING: 'PENDING' as PrismaDeliveryStatus,
+  ASSIGNED: 'ASSIGNED' as PrismaDeliveryStatus,
+  PICKED_UP: 'PICKED_UP' as PrismaDeliveryStatus,
+  IN_TRANSIT: 'IN_TRANSIT' as PrismaDeliveryStatus,
+  DELIVERED: 'DELIVERED' as PrismaDeliveryStatus,
+  CANCELLED: 'CANCELLED' as PrismaDeliveryStatus,
+};
 
 export interface CreateDeliveryDto {
   orderId: string;

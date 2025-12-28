@@ -1,0 +1,47 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+    provider = "prisma-client-js"
+}
+
+datasource db {
+    provider = "mysql"
+    url      = env("DATABASE_URL")
+}
+
+model Delivery {
+    id       String         @id @default(uuid())
+    orderId  String         @unique
+    userId   String?
+    driverId String?
+    status   DeliveryStatus @default(PENDING)
+
+    // Delivery details
+    pickupAddress   String? @db.Text
+    deliveryAddress String? @db.Text
+    customerPhone   String?
+
+    // Timestamps
+    assignedAt  DateTime?
+    pickedUpAt  DateTime?
+    deliveredAt DateTime?
+    cancelledAt DateTime?
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    @@index([orderId])
+    @@index([driverId])
+    @@index([status])
+    @@map("deliveries")
+}
+
+enum DeliveryStatus {
+    PENDING
+    ASSIGNED
+    PICKED_UP
+    IN_TRANSIT
+    DELIVERED
+    CANCELLED
+}

@@ -1,5 +1,5 @@
 import { v4 as uuidv4 } from 'uuid';
-import { query } from '../config/db';
+import { prisma } from '../config/db';
 import {
   Delivery,
   DeliveryStatus,
@@ -8,15 +8,7 @@ import {
 } from '../types/delivery.types';
 import { publishDeliveryStatusUpdated } from '../events/publisher';
 import logger from '../utils/logger';
-import { RowDataPacket, ResultSetHeader } from 'mysql2/promise';
-
-interface DeliveryRow extends RowDataPacket {
-  id: string;
-  orderId: string;
-  status: DeliveryStatus;
-  assignedAt: Date;
-  updatedAt: Date;
-}
+import { Prisma } from '@prisma/client';
 
 export class DeliveryService {
   /**
@@ -24,31 +16,23 @@ export class DeliveryService {
    */
   async createDelivery(dto: CreateDeliveryDto): Promise<Delivery> {
     const id = uuidv4();
-    const now = new Date();
 
     try {
-      await query<ResultSetHeader>(
-        `INSERT INTO delivery (id, orderId, status, assignedAt, updatedAt) 
-         VALUES (?, ?, ?, ?, ?)`,
-        [id, dto.orderId, DeliveryStatus.ASSIGNED, now, now]
-      );
-
-      const delivery: Delivery = {
-        id,
-        orderId: dto.orderId,
-        status: DeliveryStatus.ASSIGNED,
-        assignedAt: now,
-        updatedAt: now,
-      };
+      const delivery = await prisma.delivery.create({
+        data: {
+          id,
+          orderId: dto.orderId,
+          status: DeliveryStatus.ASSIGNED,
+        },
+      });
 
       logger.info(`Delivery created: ${id} for order: ${dto.orderId}`);
       return delivery;
     } catch (error: unknown) {
       // Check for duplicate entry (order already has a delivery)
       if (
-        error instanceof Error &&
-        'code' in error &&
-        (error as { code: string }).code === 'ER_DUP_ENTRY'
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        error.code === 'P2002'
       ) {
         logger.warn(`Delivery already exists for order: ${dto.orderId}`);
         const existing = await this.getDeliveryByOrderId(dto.orderId);
@@ -64,46 +48,22 @@ export class DeliveryService {
    * Get delivery by order ID
    */
   async getDeliveryByOrderId(orderId: string): Promise<Delivery | null> {
-    const rows = await query<DeliveryRow[]>(
-      'SELECT id, orderId, status, assignedAt, updatedAt FROM delivery WHERE orderId = ?',
-      [orderId]
-    );
+    const delivery = await prisma.delivery.findUnique({
+      where: { orderId },
+    });
 
-    if (rows.length === 0) {
-      return null;
-    }
-
-    const row = rows[0];
-    return {
-      id: row.id,
-      orderId: row.orderId,
-      status: row.status,
-      assignedAt: row.assignedAt,
-      updatedAt: row.updatedAt,
-    };
+    return delivery;
   }
 
   /**
    * Get delivery by ID
    */
   async getDeliveryById(id: string): Promise<Delivery | null> {
-    const rows = await query<DeliveryRow[]>(
-      'SELECT id, orderId, status, assignedAt, updatedAt FROM delivery WHERE id = ?',
-      [id]
-    );
+    const delivery = await prisma.delivery.findUnique({
+      where: { id },
+    });
 
-    if (rows.length === 0) {
-      return null;
-    }
-
-    const row = rows[0];
-    return {
-      id: row.id,
-      orderId: row.orderId,
-      status: row.status,
-      assignedAt: row.assignedAt,
-      updatedAt: row.updatedAt,
-    };
+    return delivery;
   }
 
   /**
@@ -132,27 +92,22 @@ export class DeliveryService {
     }
 
     // Update in database
-    await query<ResultSetHeader>(
-      'UPDATE delivery SET status = ?, updatedAt = NOW() WHERE orderId = ?',
-      [newStatus, orderId]
+    const updatedDelivery = await prisma.delivery.update({
+      where: { orderId },
+      data: { status: newStatus },
+    });
+
+    // Publish event
+    await publishDeliveryStatusUpdated({
+      deliveryId: updatedDelivery.id,
+      orderId: updatedDelivery.orderId,
+      oldStatus,
+      newStatus,
+    });
+
+    logger.info(
+      `Delivery ${updatedDelivery.id} status updated: ${oldStatus} -> ${newStatus}`
     );
-
-    // Get updated delivery
-    const updatedDelivery = await this.getDeliveryByOrderId(orderId);
-
-    if (updatedDelivery) {
-      // Publish event
-      await publishDeliveryStatusUpdated({
-        deliveryId: updatedDelivery.id,
-        orderId: updatedDelivery.orderId,
-        oldStatus,
-        newStatus,
-      });
-
-      logger.info(
-        `Delivery ${updatedDelivery.id} status updated: ${oldStatus} -> ${newStatus}`
-      );
-    }
 
     return updatedDelivery;
   }
@@ -184,25 +139,20 @@ export class DeliveryService {
     const oldStatus = delivery.status;
 
     // Update status to cancelled
-    await query<ResultSetHeader>(
-      'UPDATE delivery SET status = ?, updatedAt = NOW() WHERE orderId = ?',
-      [DeliveryStatus.CANCELLED, orderId]
-    );
+    const updatedDelivery = await prisma.delivery.update({
+      where: { orderId },
+      data: { status: DeliveryStatus.CANCELLED },
+    });
 
-    // Get updated delivery
-    const updatedDelivery = await this.getDeliveryByOrderId(orderId);
+    // Publish event
+    await publishDeliveryStatusUpdated({
+      deliveryId: updatedDelivery.id,
+      orderId: updatedDelivery.orderId,
+      oldStatus,
+      newStatus: DeliveryStatus.CANCELLED,
+    });
 
-    if (updatedDelivery) {
-      // Publish event
-      await publishDeliveryStatusUpdated({
-        deliveryId: updatedDelivery.id,
-        orderId: updatedDelivery.orderId,
-        oldStatus,
-        newStatus: DeliveryStatus.CANCELLED,
-      });
-
-      logger.info(`Delivery ${updatedDelivery.id} cancelled`);
-    }
+    logger.info(`Delivery ${updatedDelivery.id} cancelled`);
 
     return updatedDelivery;
   }
@@ -214,17 +164,13 @@ export class DeliveryService {
     from: DeliveryStatus,
     to: DeliveryStatus
   ): boolean {
-    const validTransitions: Record<DeliveryStatus, DeliveryStatus[]> = {
-      [DeliveryStatus.ASSIGNED]: [
-        DeliveryStatus.IN_TRANSIT,
-        DeliveryStatus.CANCELLED,
-      ],
-      [DeliveryStatus.IN_TRANSIT]: [
-        DeliveryStatus.DELIVERED,
-        DeliveryStatus.CANCELLED,
-      ],
-      [DeliveryStatus.DELIVERED]: [], // Terminal state
-      [DeliveryStatus.CANCELLED]: [], // Terminal state
+    const validTransitions: Partial<Record<DeliveryStatus, DeliveryStatus[]>> = {
+      PENDING: ['ASSIGNED', 'CANCELLED'],
+      ASSIGNED: ['PICKED_UP', 'CANCELLED'],
+      PICKED_UP: ['IN_TRANSIT', 'CANCELLED'],
+      IN_TRANSIT: ['DELIVERED', 'CANCELLED'],
+      DELIVERED: [], // Terminal state
+      CANCELLED: [], // Terminal state
     };
 
     return validTransitions[from]?.includes(to) ?? false;
@@ -234,17 +180,12 @@ export class DeliveryService {
    * Get all deliveries (for debugging/admin)
    */
   async getAllDeliveries(): Promise<Delivery[]> {
-    const rows = await query<DeliveryRow[]>(
-      'SELECT id, orderId, status, assignedAt, updatedAt FROM delivery ORDER BY assignedAt DESC LIMIT 100'
-    );
+    const deliveries = await prisma.delivery.findMany({
+      orderBy: { assignedAt: 'desc' },
+      take: 100,
+    });
 
-    return rows.map((row) => ({
-      id: row.id,
-      orderId: row.orderId,
-      status: row.status,
-      assignedAt: row.assignedAt,
-      updatedAt: row.updatedAt,
-    }));
+    return deliveries;
   }
 }
 
