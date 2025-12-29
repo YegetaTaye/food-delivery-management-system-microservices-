@@ -1,0 +1,129 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: payment-service
+  namespace: dev
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: payment-service
+  template:
+    metadata:
+      labels:
+        app: payment-service
+    spec:
+      containers:
+        - name: payment-service
+          image: yegeta100/payment-service:latest
+          ports:
+            - containerPort: 3004
+          env:
+            - name: SERVICE_NAME
+              value: "payment-service"
+
+            - name: SERVICE_VERSION
+              value: "1.0.0"
+
+            - name: DEBUG
+              value: "false"
+
+            - name: HOST
+              value: "0.0.0.0"
+
+            - name: PORT
+              value: "3004"
+
+            # Database configuration
+            - name: MYSQL_HOST
+              value: "payment-db.dev.svc.cluster.local"
+
+            - name: MYSQL_PORT
+              value: "3306"
+
+            - name: MYSQL_DATABASE
+              value: "payment_db"
+
+            - name: MYSQL_USER
+              valueFrom:
+                secretKeyRef:
+                  name: payment-db-secret
+                  key: MYSQL_USER
+
+            - name: MYSQL_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: payment-db-secret
+                  key: MYSQL_PASSWORD
+
+            # RabbitMQ configuration
+            - name: RABBITMQ_HOST
+              value: "rabbitmq.dev.svc.cluster.local"
+
+            - name: RABBITMQ_PORT
+              value: "5672"
+
+            - name: RABBITMQ_USER
+              value: "admin"
+
+            - name: RABBITMQ_PASSWORD
+              value: "admin123"
+
+            - name: RABBITMQ_VHOST
+              value: "/"
+
+            # Exchange and Queue settings
+            - name: ORDER_EXCHANGE
+              value: "orders.events"
+
+            - name: PAYMENT_EXCHANGE
+              value: "payments.events"
+
+            - name: ORDER_CREATED_QUEUE
+              value: "payment.order.created"
+
+            - name: ORDER_CREATED_ROUTING_KEY
+              value: "order.created"
+
+          command: ["/bin/sh"]
+          args:
+            - -c
+            - |
+              # Wait for database to be ready using Python
+              python -c "
+              import socket
+              import time
+              import sys
+
+              host = 'payment-db.dev.svc.cluster.local'
+              port = 3306
+              max_attempts = 30
+
+              for attempt in range(max_attempts):
+                  try:
+                      sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                      sock.settimeout(2)
+                      sock.connect((host, port))
+                      sock.close()
+                      print('MySQL is ready!')
+                      sys.exit(0)
+                  except:
+                      print(f'Waiting for MySQL... (attempt {attempt+1}/{max_attempts})')
+                      time.sleep(2)
+
+              print('Failed to connect to MySQL')
+              sys.exit(1)
+              "
+
+              # Start the application
+              exec uvicorn app.main:app --host 0.0.0.0 --port 3004
+
+          imagePullPolicy: IfNotPresent
+
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "100m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
