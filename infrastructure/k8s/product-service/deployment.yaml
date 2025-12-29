@@ -73,4 +73,15 @@ spec:
             - name: DATABASE_URL
               value: "mysql://$(MYSQL_USER):$(MYSQL_PASSWORD)@$(MYSQL_HOST):3306/$(MYSQL_DATABASE)"
 
+          command: ["/bin/sh"]
+          args:
+            - -c
+            - |
+              # Run Prisma migrations on startup
+              echo "Running database migrations..."
+              npx prisma migrate deploy
+
+              # Start the application
+              exec node dist/index.js
+
           imagePullPolicy: IfNotPresent
