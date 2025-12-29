@@ -5,8 +5,8 @@ import logger from '../utils/logger';
 let connection: ChannelModel | null = null;
 let channel: Channel | null = null;
 
-const EXCHANGE_NAME = 'order.events';
-const EXCHANGE_TYPE = 'direct';
+const EXCHANGE_NAME = 'orders.events';
+const EXCHANGE_TYPE = 'topic';
 
 // Retry configuration
 const MAX_RETRIES = 5;
