@@ -12,6 +12,8 @@ const ORDER_CANCELLED_KEY = 'order.cancelled';
 const ORDER_STATUS_UPDATED_KEY = 'order.status.updated';
 const PAYMENT_COMPLETED_KEY = 'payment.completed';
 
+
+
 export const startEventConsumer = async (): Promise<void> => {
   try {
     const channel = getChannel();
