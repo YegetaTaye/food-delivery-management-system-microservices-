@@ -16,6 +16,41 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/payments", tags=["Payments"])
 
 
+@router.get(
+    "",
+    response_model=list[PaymentResponse],
+    responses={
+        200: {"description": "List of payments"},
+    },
+    summary="Get all payments",
+    description="Retrieve all payment records with optional pagination.",
+)
+async def get_all_payments(
+    limit: int = 100,
+    offset: int = 0,
+    db: Session = Depends(get_db),
+) -> list[PaymentResponse]:
+    """
+    Get all payments with pagination.
+    
+    - **limit**: Maximum number of records to return (default: 100)
+    - **offset**: Number of records to skip (default: 0)
+    """
+    payments = PaymentService.get_all_payments(db, limit=limit, offset=offset)
+    
+    return [
+        PaymentResponse(
+            id=payment.id,
+            order_id=payment.order_id,
+            amount=float(payment.amount),
+            status=payment.status.value,
+            method=payment.method.value,
+            created_at=payment.created_at,
+        )
+        for payment in payments
+    ]
+
+
 @router.post(
     "",
     response_model=PaymentResponse,

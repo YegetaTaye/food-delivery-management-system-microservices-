@@ -89,6 +89,21 @@ class PaymentService:
         return db.query(Payment).filter(Payment.id == payment_id).first()
     
     @staticmethod
+    def get_all_payments(db: Session, limit: int = 100, offset: int = 0) -> list[Payment]:
+        """
+        Retrieve all payments with pagination.
+        
+        Args:
+            db: Database session
+            limit: Maximum number of records to return
+            offset: Number of records to skip
+            
+        Returns:
+            List of payment records
+        """
+        return db.query(Payment).order_by(Payment.created_at.desc()).offset(offset).limit(limit).all()
+    
+    @staticmethod
     def create_payment_from_order_event(
         db: Session,
         order_id: str,

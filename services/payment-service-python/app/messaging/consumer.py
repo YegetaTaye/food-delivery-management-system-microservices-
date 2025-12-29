@@ -32,7 +32,7 @@ async def process_order_created(message: aio_pika.IncomingMessage) -> None:
             
             # Extract order details
             order_id = body.get("orderId") or body.get("order_id")
-            amount = body.get("total") or body.get("amount") or 0.0
+            amount = body.get("totalAmount") or body.get("total") or body.get("amount") or 0.0
             
             if not order_id:
                 logger.error("Missing order_id in event payload")
@@ -87,7 +87,7 @@ async def start_consumer() -> None:
         # Declare order exchange
         order_exchange = await channel.declare_exchange(
             settings.ORDER_EXCHANGE,
-            aio_pika.ExchangeType.DIRECT,
+            aio_pika.ExchangeType.TOPIC,
             durable=True,
         )
         
