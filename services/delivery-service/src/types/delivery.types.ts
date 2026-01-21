@@ -48,6 +48,16 @@ export interface OrderCancelledEvent {
   traceId: string;
 }
 
+export interface OrderStatusUpdatedEvent {
+  eventId: string;
+  eventType: string;
+  timestamp: string;
+  orderId: string;
+  userId: string;
+  status: string;
+  traceId?: string;
+}
+
 export interface DeliveryStatusUpdatedEvent {
   eventId: string;
   version: number;

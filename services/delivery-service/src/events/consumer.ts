@@ -1,13 +1,13 @@
 import { ConsumeMessage } from 'amqplib';
 import { getChannel, EXCHANGE_NAME } from '../config/rabbitmq';
 import { deliveryService } from '../services/delivery.service';
-import { OrderCreatedEvent, OrderCancelledEvent } from '../types/delivery.types';
+import { OrderStatusUpdatedEvent, OrderCancelledEvent } from '../types/delivery.types';
 import logger from '../utils/logger';
 
 const QUEUE_NAME = 'delivery-service.order-events';
 
 // Routing keys to consume
-const ORDER_CREATED_KEY = 'order.created';
+const ORDER_STATUS_UPDATED_KEY = 'order.status.updated';
 const ORDER_CANCELLED_KEY = 'order.cancelled';
 
 export const startEventConsumer = async (): Promise<void> => {
@@ -21,11 +21,11 @@ export const startEventConsumer = async (): Promise<void> => {
     });
 
     // Bind queue to exchange with routing keys
-    await channel.bindQueue(QUEUE_NAME, EXCHANGE_NAME, ORDER_CREATED_KEY);
+    await channel.bindQueue(QUEUE_NAME, EXCHANGE_NAME, ORDER_STATUS_UPDATED_KEY);
     await channel.bindQueue(QUEUE_NAME, EXCHANGE_NAME, ORDER_CANCELLED_KEY);
 
     logger.info(`✅ Queue '${QUEUE_NAME}' bound to exchange '${EXCHANGE_NAME}'`);
-    logger.info(`   - Listening for: ${ORDER_CREATED_KEY}, ${ORDER_CANCELLED_KEY}`);
+    logger.info(`   - Listening for: ${ORDER_STATUS_UPDATED_KEY}, ${ORDER_CANCELLED_KEY}`);
 
     // Set prefetch to process one message at a time
     await channel.prefetch(1);
@@ -42,14 +42,14 @@ export const startEventConsumer = async (): Promise<void> => {
         const content = msg.content.toString();
         const event = JSON.parse(content);
 
-        logger.info(`Received event: ${routingKey}`, {
+        logger.info(`📥 Received event: ${routingKey}`, {
           eventId: event.eventId,
           orderId: event.orderId,
         });
 
         switch (routingKey) {
-          case ORDER_CREATED_KEY:
-            await handleOrderCreated(event as OrderCreatedEvent);
+          case ORDER_STATUS_UPDATED_KEY:
+            await handleOrderStatusUpdated(event as OrderStatusUpdatedEvent);
             break;
           case ORDER_CANCELLED_KEY:
             await handleOrderCancelled(event as OrderCancelledEvent);
@@ -82,24 +82,31 @@ export const startEventConsumer = async (): Promise<void> => {
 };
 
 /**
- * Handle order.created event
- * Creates a new delivery record with ASSIGNED status
+ * Handle order.status.updated event
+ * Creates a delivery when order is CONFIRMED
  */
-const handleOrderCreated = async (event: OrderCreatedEvent): Promise<void> => {
-  logger.info(`Processing order.created for order: ${event.orderId}`);
+const handleOrderStatusUpdated = async (event: OrderStatusUpdatedEvent): Promise<void> => {
+  logger.info(`Processing order.status.updated for order: ${event.orderId}`, {
+    status: event.status,
+  });
 
   try {
-    const delivery = await deliveryService.createDelivery({
-      orderId: event.orderId,
-    });
+    // Only create delivery when order is CONFIRMED (payment successful)
+    if (event.status === 'CONFIRMED') {
+      const delivery = await deliveryService.createDelivery({
+        orderId: event.orderId,
+      });
 
-    logger.info(`Delivery ${delivery.id} created for order ${event.orderId}`, {
-      deliveryId: delivery.id,
-      status: delivery.status,
-      traceId: event.traceId,
-    });
+      logger.info(`Delivery ${delivery.id} created for confirmed order ${event.orderId}`, {
+        deliveryId: delivery.id,
+        status: delivery.status,
+        traceId: event.traceId,
+      });
+    } else {
+      logger.debug(`Ignoring order.status.updated with status: ${event.status}`);
+    }
   } catch (error) {
-    logger.error(`Failed to create delivery for order: ${event.orderId}`, error);
+    logger.error(`Failed to process order status update for order: ${event.orderId}`, error);
     throw error;
   }
 };

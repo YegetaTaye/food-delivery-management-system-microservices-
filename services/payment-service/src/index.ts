@@ -1,19 +1,32 @@
 import app from './app';
 import { config } from './config/env';
+import { connectRabbitMQ, closeRabbitMQ } from './config/rabbitmq';
+import { startEventConsumer } from './events/consumer';
 import logger from './utils/logger';
 
-const startServer = (): void => {
+const startServer = async (): Promise<void> => {
   try {
+    // Connect to RabbitMQ
+    await connectRabbitMQ();
+    
+    // Start event consumer
+    await startEventConsumer();
+
     const server = app.listen(config.port, () => {
       logger.info(`🚀 ${config.serviceName} is running on port ${config.port}`);
       logger.info(`📚 API Documentation available at http://localhost:${config.port}/docs`);
       logger.info(`💚 Health check available at http://localhost:${config.port}/health`);
+      logger.info(`🐰 RabbitMQ consumer listening for order.created events`);
       logger.info(`Environment: ${config.nodeEnv}`);
     });
 
     // Graceful shutdown
-    const gracefulShutdown = (signal: string) => {
+    const gracefulShutdown = async (signal: string) => {
       logger.info(`${signal} received. Starting graceful shutdown...`);
+      
+      // Close RabbitMQ connection
+      await closeRabbitMQ();
+      
       server.close(() => {
         logger.info('Server closed. Exiting process.');
         process.exit(0);

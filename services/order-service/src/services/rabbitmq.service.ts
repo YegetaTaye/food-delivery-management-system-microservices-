@@ -66,6 +66,14 @@ class RabbitMQService {
     }
   }
 
+  getChannel(): amqp.Channel | null {
+    return this.channel;
+  }
+
+  getExchange(): string {
+    return this.exchange;
+  }
+
   async disconnect(): Promise<void> {
     try {
       if (this.channel) {

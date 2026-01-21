@@ -176,7 +176,7 @@ export class OrderService {
       // Call product-service to validate stock availability
       for (const item of items) {
         const response = await axios.get(
-          `${config.productServiceUrl}/menu-items/${item.productId}`
+          `${config.productServiceUrl}/products/menu-items/${item.productId}`
         );
 
         const product = response.data.data;

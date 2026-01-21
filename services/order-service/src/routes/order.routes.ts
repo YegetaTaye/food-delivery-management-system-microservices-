@@ -98,7 +98,7 @@ const router = Router();
 
 /**
  * @swagger
- * /orders:
+ * /:
  *   post:
  *     summary: Create a new order
  *     tags: [Orders]
@@ -133,7 +133,7 @@ router.post('/', authenticate, validate(createOrderSchema), OrderController.crea
 
 /**
  * @swagger
- * /orders:
+ * /:
  *   get:
  *     summary: Get all orders for authenticated user
  *     tags: [Orders]
@@ -162,7 +162,7 @@ router.get('/', authenticate, OrderController.getOrders);
 
 /**
  * @swagger
- * /orders/{id}:
+ * /{id}:
  *   get:
  *     summary: Get order by ID
  *     tags: [Orders]
@@ -198,7 +198,7 @@ router.get('/:id', authenticate, OrderController.getOrderById);
 
 /**
  * @swagger
- * /orders/{id}/cancel:
+ * /{id}/cancel:
  *   patch:
  *     summary: Cancel an order
  *     tags: [Orders]
@@ -236,7 +236,7 @@ router.patch('/:id/cancel', authenticate, OrderController.cancelOrder);
 
 /**
  * @swagger
- * /orders/{id}/status:
+ * /{id}/status:
  *   patch:
  *     summary: Update order status (Admin/Internal use)
  *     tags: [Orders]
