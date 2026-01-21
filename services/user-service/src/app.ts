@@ -57,12 +57,19 @@ class App {
     // Health check route
     this.app.use('/', healthRoute);
     
-    // API routes
-    this.app.use('/api/auth', authRoutes);
-    this.app.use('/api/users', userRoutes);
+    // Swagger documentation (before auth routes to allow public access)
+    this.app.use('/api/v1/users/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
+      explorer: true,
+      customCss: '.swagger-ui .topbar { display: none }',
+      customSiteTitle: `${config.serviceName} API Docs`,
+    }));
     
-    // Swagger documentation
-    this.app.use('/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
+    // API routes
+    this.app.use('/api/v1/users/auth', authRoutes);
+    this.app.use('/api/v1/users', userRoutes);
+    
+    // Duplicate swagger for backwards compatibility
+    this.app.use('/api/v1/users/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
       explorer: true,
       customCss: '.swagger-ui .topbar { display: none }',
       customSiteTitle: `${config.serviceName} API Docs`,

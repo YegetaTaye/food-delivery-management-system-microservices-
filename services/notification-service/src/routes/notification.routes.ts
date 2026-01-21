@@ -71,7 +71,7 @@ const router = Router();
 
 /**
  * @swagger
- * /notifications:
+ * /api/v1/notifications:
  *   get:
  *     summary: Get all notifications
  *     description: Retrieve notifications from in-memory store. Supports filtering by userId or eventName.
@@ -108,7 +108,7 @@ router.get('/', notificationController.getNotifications.bind(notificationControl
 
 /**
  * @swagger
- * /notifications/stats:
+ * /api/v1/notifications/stats:
  *   get:
  *     summary: Get notification statistics
  *     description: Get counts of notifications grouped by event type

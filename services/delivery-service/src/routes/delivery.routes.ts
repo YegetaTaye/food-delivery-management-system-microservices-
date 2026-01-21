@@ -77,7 +77,7 @@ const router = Router();
 
 /**
  * @swagger
- * /deliveries:
+ * /api/v1/deliveries:
  *   get:
  *     summary: Get all deliveries
  *     description: Retrieve a list of all deliveries (limited to 100 most recent)
@@ -100,7 +100,7 @@ router.get('/', deliveryController.getAllDeliveries.bind(deliveryController));
 
 /**
  * @swagger
- * /deliveries/{orderId}:
+ * /api/v1/deliveries/{orderId}:
  *   get:
  *     summary: Get delivery by order ID
  *     description: Retrieve delivery information for a specific order
@@ -136,7 +136,7 @@ router.get('/:orderId', deliveryController.getDeliveryByOrderId.bind(deliveryCon
 
 /**
  * @swagger
- * /deliveries/{orderId}/status:
+ * /api/v1/deliveries/{orderId}/status:
  *   patch:
  *     summary: Update delivery status
  *     description: Update the status of a delivery. Valid transitions are ASSIGNED -> IN_TRANSIT -> DELIVERED. CANCELLED is a terminal state reachable from ASSIGNED or IN_TRANSIT.

@@ -48,11 +48,11 @@ class App {
     this.app.use('/', healthRoute);
 
     // Analytics routes
-    this.app.use('/analytics', analyticsRoutes);
+    this.app.use('/api/v1/analytics', analyticsRoutes);
 
     // Swagger documentation
     this.app.use(
-      '/docs',
+      '/api/v1/analytics/api-docs',
       swaggerUi.serve,
       swaggerUi.setup(swaggerSpec, {
         explorer: true,

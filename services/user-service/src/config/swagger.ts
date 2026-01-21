@@ -15,8 +15,8 @@ const swaggerOptions: swaggerJsdoc.Options = {
     },
     servers: [
       {
-        url: `http://localhost:${config.port}`,
-        description: 'Development server',
+        url: `http://localhost:8080/api/v1/users`,
+        description: 'User Service via Ingress Gateway',
       },
     ],
     components: {

@@ -24,8 +24,8 @@ This service listens to order events from RabbitMQ and manages delivery lifecycl
     },
     servers: [
       {
-        url: `http://localhost:${config.port}`,
-        description: 'Development server',
+        url: `http://localhost:8080/api/v1/deliveries`,
+        description: 'Delivery Service via Ingress Gateway',
       },
     ],
     tags: [

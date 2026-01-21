@@ -52,23 +52,22 @@ app.use((req: Request, _res: Response, next) => {
 
 
 // Routes
-app.use(`/api/${config.apiVersion}/menu-items`, menuRoutes);
-app.use(`/api/${config.apiVersion}/categories`, categoryRoutes);
+app.use(`/api/${config.apiVersion}/products/menu-items`, menuRoutes);
+app.use(`/api/${config.apiVersion}/products/categories`, categoryRoutes);
 app.use('/', healthRoute);
 
 // Serve swagger.json file
-app.get('/swagger.json', (_req: Request, res: Response) => {
+app.get('/api/v1/products/swagger.json', (_req: Request, res: Response) => {
   res.setHeader('Content-Type', 'application/json');
   res.send(swaggerSpec);
 });
 
 // Swagger docs
-app.use('/docs', swaggerUi.serve, swaggerUi.setup(undefined, {
+app.use('/api/v1/products/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
   explorer: true,
   customCss: '.swagger-ui .topbar { display: none }',
   customSiteTitle: `${config.serviceName} API Docs`,
   swaggerOptions: {
-    url: '/swagger.json',
     persistAuthorization: true,
   },
 }));

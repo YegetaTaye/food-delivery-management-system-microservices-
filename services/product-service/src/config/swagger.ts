@@ -12,8 +12,8 @@ const swaggerOptions: swaggerJsdoc.Options = {
     },
     servers: [
       { 
-        url: `http://localhost:3002/api/${config.apiVersion}`,
-        description: 'Product Service - Port 3002'
+        url: `http://localhost:8080/api/${config.apiVersion}/products`,
+        description: 'Product Service via Ingress Gateway'
       }
     ],
     tags: [

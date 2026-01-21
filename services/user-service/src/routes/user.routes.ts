@@ -135,7 +135,7 @@ const router = Router();
 
 /**
  * @swagger
- * /api/users:
+ * /:
  *   post:
  *     summary: Create a new user
  *     tags: [Users]
@@ -173,7 +173,7 @@ router.post('/', authenticate, validate(createUserSchema), UserController.create
 
 /**
  * @swagger
- * /api/users:
+ * /:
  *   get:
  *     summary: Get all users with pagination
  *     tags: [Users]
@@ -206,7 +206,7 @@ router.get('/', authenticate, UserController.getAllUsers);
 
 /**
  * @swagger
- * /api/users/search:
+ * /search:
  *   get:
  *     summary: Search users by name or email
  *     tags: [Users]
@@ -247,7 +247,7 @@ router.get('/search', authenticate, UserController.searchUsers);
 
 /**
  * @swagger
- * /api/users/{id}:
+ * /{id}:
  *   get:
  *     summary: Get user by ID
  *     tags: [Users]
@@ -276,7 +276,7 @@ router.get('/:id', authenticate, UserController.getUserById);
 
 /**
  * @swagger
- * /api/users/{id}:
+ * /{id}:
  *   put:
  *     summary: Update user
  *     tags: [Users]
@@ -315,7 +315,7 @@ router.put('/:id', authenticate, validate(updateUserSchema), UserController.upda
 
 /**
  * @swagger
- * /api/users/{id}:
+ * /{id}:
  *   delete:
  *     summary: Delete user
  *     tags: [Users]

@@ -90,7 +90,7 @@ const router = Router();
 
 /**
  * @swagger
- * /analytics/events:
+ * /api/v1/analytics/events:
  *   get:
  *     summary: Get all analytics events
  *     description: Retrieve stored analytics events with optional filtering
@@ -139,7 +139,7 @@ router.get('/events', analyticsController.getEvents.bind(analyticsController));
 
 /**
  * @swagger
- * /analytics/events/{type}:
+ * /api/v1/analytics/events/{type}:
  *   get:
  *     summary: Get events by type
  *     description: Retrieve analytics events filtered by event type
@@ -173,7 +173,7 @@ router.get('/events/:type', analyticsController.getEventsByType.bind(analyticsCo
 
 /**
  * @swagger
- * /analytics/stats:
+ * /api/v1/analytics/stats:
  *   get:
  *     summary: Get event statistics
  *     description: Get counts of events grouped by type and source service

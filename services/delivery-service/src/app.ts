@@ -47,15 +47,15 @@ class App {
     // Health check route
     this.app.use('/', healthRoute);
     
-    // Delivery routes
-    this.app.use('/deliveries', deliveryRoutes);
-    
-    // Swagger documentation
-    this.app.use('/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
+    // Swagger documentation (must come before delivery routes to avoid route conflict)
+    this.app.use('/api/v1/deliveries/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
       explorer: true,
       customCss: '.swagger-ui .topbar { display: none }',
       customSiteTitle: `${config.serviceName} API Docs`,
     }));
+    
+    // Delivery routes
+    this.app.use('/api/v1/deliveries', deliveryRoutes);
 
     // 404 handler
     this.app.use('*', (req: Request, res: Response) => {

@@ -48,10 +48,10 @@ class App {
     this.app.use('/', healthRoute);
     
     // Notification routes
-    this.app.use('/notifications', notificationRoutes);
+    this.app.use('/api/v1/notifications', notificationRoutes);
     
     // Swagger documentation
-    this.app.use('/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
+    this.app.use('/api/v1/notifications/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
       explorer: true,
       customCss: '.swagger-ui .topbar { display: none }',
       customSiteTitle: `${config.serviceName} API Docs`,

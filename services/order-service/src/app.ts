@@ -56,23 +56,31 @@ class App {
     // Health check route
     this.app.use('/', healthRoute);
     
-    // API routes
-    this.app.use(`/api/${config.apiVersion}/orders`, orderRoutes);
-
     // Serve swagger.json file
-    this.app.get('/swagger.json', (_req: Request, res: Response) => {
+    this.app.get('/api/v1/orders/swagger.json', (_req: Request, res: Response) => {
       res.setHeader('Content-Type', 'application/json');
       res.send(swaggerSpec);
     });
     
-    // Swagger documentation
-    this.app.use('/docs', swaggerUi.serve, swaggerUi.setup(undefined, {
+    // Swagger documentation (before auth routes to allow public access)
+    this.app.use('/api/v1/orders/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
       explorer: true,
       customCss: '.swagger-ui .topbar { display: none }',
       customSiteTitle: `${config.serviceName} API Docs`,
-      swaggerOptions: {
-        url: '/swagger.json',
-      },
+    }));
+    
+    // API routes
+    this.app.use(`/api/${config.apiVersion}/orders`, orderRoutes);
+
+    // Duplicate for backwards compatibility
+    this.app.get('/api/v1/orders/docs/swagger.json', (_req: Request, res: Response) => {
+      res.setHeader('Content-Type', 'application/json');
+      res.send(swaggerSpec);
+    });
+    this.app.use('/api/v1/orders/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
+      explorer: true,
+      customCss: '.swagger-ui .topbar { display: none }',
+      customSiteTitle: `${config.serviceName} API Docs`,
     }));
 
     // 404 handler

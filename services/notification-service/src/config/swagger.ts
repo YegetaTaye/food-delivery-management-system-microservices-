@@ -31,8 +31,8 @@ This is an event-driven service that consumes events from RabbitMQ and logs noti
     },
     servers: [
       {
-        url: `http://localhost:${config.port}`,
-        description: 'Development server',
+        url: `http://localhost:8080/api/v1/notifications`,
+        description: 'Notification Service via Ingress Gateway',
       },
     ],
     tags: [

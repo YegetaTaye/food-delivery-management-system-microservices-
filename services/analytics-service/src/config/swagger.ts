@@ -33,8 +33,8 @@ Events are stored with:
     },
     servers: [
       {
-        url: `http://localhost:${config.port}`,
-        description: 'Development server',
+        url: `http://localhost:8080/api/v1/analytics`,
+        description: 'Analytics Service via Ingress Gateway',
       },
     ],
     tags: [
