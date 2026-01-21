@@ -9,32 +9,27 @@ export interface Notification {
 
 // Event Types from other services
 export interface OrderCreatedEvent {
-  eventId: string;
-  version: number;
-  timestamp: string;
-  source: string;
+  eventId?: string;
+  eventType?: string;
+  timestamp?: string;
   orderId: string;
   userId: string;
   items: Array<{
     productId: string;
-    qty: number;
-    price: number;
+    productName: string;
+    quantity: number;
+    price: string | number;
   }>;
-  total: number;
-  paymentMethod: string;
-  traceId: string;
+  totalAmount: string | number;
 }
 
 export interface OrderStatusUpdatedEvent {
-  eventId: string;
-  version: number;
-  timestamp: string;
-  source: string;
+  eventId?: string;
+  eventType?: string;
+  timestamp?: string;
   orderId: string;
   userId: string;
-  oldStatus: string;
-  newStatus: string;
-  traceId: string;
+  status: string;
 }
 
 export interface PaymentCompletedEvent {
@@ -50,5 +45,20 @@ export interface PaymentCompletedEvent {
   traceId: string;
 }
 
-export type DomainEvent = OrderCreatedEvent | OrderStatusUpdatedEvent | PaymentCompletedEvent;
+export interface DeliveryStatusUpdatedEvent {
+  eventId: string;
+  version: number;
+  timestamp: string;
+  source: string;
+  deliveryId: string;
+  orderId: string;
+  userId: string;
+  oldStatus: string;
+  newStatus: string;
+  driverId?: string;
+  estimatedDeliveryTime?: string;
+  traceId: string;
+}
+
+export type DomainEvent = OrderCreatedEvent | OrderStatusUpdatedEvent | PaymentCompletedEvent | DeliveryStatusUpdatedEvent;
 

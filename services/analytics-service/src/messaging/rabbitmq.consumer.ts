@@ -51,8 +51,8 @@ export const startEventConsumer = async (): Promise<void> => {
           eventId: 'eventId' in event ? event.eventId : 'unknown',
         });
 
-        // Store the event in database
-        await analyticsService.storeEvent(
+        // Store the event in memory
+        analyticsService.storeEvent(
           routingKey,
           event.source || 'unknown',
           event as unknown as Record<string, unknown>

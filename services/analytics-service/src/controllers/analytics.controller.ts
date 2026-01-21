@@ -7,11 +7,11 @@ export class AnalyticsController {
    * Get all events
    * GET /analytics/events
    */
-  async getEvents(
+  getEvents(
     req: Request,
     res: Response,
     next: NextFunction
-  ): Promise<void> {
+  ): void {
     try {
       const limit = parseInt(req.query.limit as string) || 100;
       const offset = parseInt(req.query.offset as string) || 0;
@@ -22,7 +22,7 @@ export class AnalyticsController {
       const startDate = startDateStr ? new Date(startDateStr) : undefined;
       const endDate = endDateStr ? new Date(endDateStr) : undefined;
 
-      const result = await analyticsService.getEvents({
+      const result = analyticsService.getEvents({
         sourceService,
         startDate,
         endDate,
@@ -50,11 +50,11 @@ export class AnalyticsController {
    * Get events by type
    * GET /analytics/events/:type
    */
-  async getEventsByType(
+  getEventsByType(
     req: Request,
     res: Response,
     next: NextFunction
-  ): Promise<void> {
+  ): void {
     try {
       const { type } = req.params;
       const limit = parseInt(req.query.limit as string) || 100;
@@ -67,7 +67,7 @@ export class AnalyticsController {
         return;
       }
 
-      const events = await analyticsService.getEventsByType(type, limit);
+      const events = analyticsService.getEventsByType(type, limit);
 
       res.status(200).json({
         success: true,
@@ -85,13 +85,13 @@ export class AnalyticsController {
    * Get event statistics
    * GET /analytics/stats
    */
-  async getStatistics(
+  getStatistics(
     _req: Request,
     res: Response,
     next: NextFunction
-  ): Promise<void> {
+  ): void {
     try {
-      const stats = await analyticsService.getStatistics();
+      const stats = analyticsService.getStatistics();
 
       res.status(200).json({
         success: true,

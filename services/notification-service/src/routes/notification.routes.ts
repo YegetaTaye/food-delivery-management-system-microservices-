@@ -92,7 +92,7 @@ const router = Router();
  *         name: eventName
  *         schema:
  *           type: string
- *           enum: [order.created, order.status.updated, payment.completed]
+ *           enum: [order.created, order.status.updated, payment.completed, delivery.status.updated]
  *         description: Filter by event name
  *     responses:
  *       200:
