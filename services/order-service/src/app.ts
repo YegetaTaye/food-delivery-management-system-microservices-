@@ -4,8 +4,10 @@ import helmet from 'helmet';
 import swaggerUi from 'swagger-ui-express';
 import { swaggerSpec } from './config/swagger';
 import { errorHandler } from './middlewares/error.middleware';
+import { metricsMiddleware } from './utils/metrics';
 import healthRoute from './routes/health.route';
 import orderRoutes from './routes/order.routes';
+import metricsRoute from './routes/metrics.route';
 import logger from './utils/logger';
 import { config } from './config/env';
 import fs from 'fs';
@@ -42,6 +44,9 @@ class App {
     this.app.use(express.json());
     this.app.use(express.urlencoded({ extended: true }));
     
+    // Metrics middleware (before request logging for accurate timing)
+    this.app.use(metricsMiddleware);
+    
     // Request logging
     this.app.use((req: Request, _res: Response, next) => {
       logger.info(`${req.method} ${req.path}`, {
@@ -53,6 +58,9 @@ class App {
   }
 
   private initializeRoutes(): void {
+    // Metrics route (no auth required for Prometheus)
+    this.app.use('/', metricsRoute);
+    
     // Health check route
     this.app.use('/', healthRoute);
     
