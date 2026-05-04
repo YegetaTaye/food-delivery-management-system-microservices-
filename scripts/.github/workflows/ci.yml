@@ -42,6 +42,17 @@ jobs:
         working-directory: ./services/${{ matrix.service }}
         run: npx tsc --noEmit
 
+      - name: Audit Dependencies
+        working-directory: ./services/${{ matrix.service }}
+        run: npm audit --audit-level=moderate
+
+      - name: Run Trivy Vulnerability Scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'fs'
+          ignore-unfixed: true
+          format: 'table'
+
       - name: Build Service
         working-directory: ./services/${{ matrix.service }}
         run: npm run build

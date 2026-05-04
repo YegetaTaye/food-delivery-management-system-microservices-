@@ -14,8 +14,8 @@
 
 ---
 
-**SWENG5111 Distributed Systems Mini Project**  
-Addis Ababa Science & Technology University (AASTU) – 2025  
+**SWENG5111 Distributed Systems Mini Project**
+Addis Ababa Science & Technology University (AASTU) – 2025
 Team: Group 2 | Instructor: Felix Edesa, MSc
 
 ---
@@ -47,12 +47,12 @@ Team: Group 2 | Instructor: Felix Edesa, MSc
 
 ### Key Features
 
-✅ **8 Microservices** – Each with single responsibility  
-✅ **Event-Driven** – RabbitMQ pub/sub for loose coupling  
-✅ **API Gateway** – NGINX Ingress for routing & rate limiting  
-✅ **Container-Ready** – Docker + Kubernetes deployment  
-✅ **OpenAPI Specs** – Full API documentation with Swagger  
-✅ **Message Tracing** – Debug event flow through RabbitMQ UI  
+✅ **8 Microservices** – Each with single responsibility
+✅ **Event-Driven** – RabbitMQ pub/sub for loose coupling
+✅ **API Gateway** – NGINX Ingress for routing & rate limiting
+✅ **Container-Ready** – Docker + Kubernetes deployment
+✅ **OpenAPI Specs** – Full API documentation with Swagger
+✅ **Message Tracing** – Debug event flow through RabbitMQ UI
 
 ---
 
