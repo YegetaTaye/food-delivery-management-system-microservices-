@@ -1,20 +1,632 @@
 {
   "openapi": "3.0.0",
   "info": {
-    "title": "MicroserviceName",
+    "title": "Food Delivery - Menu Service",
     "version": "1.0.0",
-    "description": "MicroserviceName API Documentation",
-    "contact": {
-      "name": "API Support"
-    }
+    "description": "Menu items and categories API for food delivery platform"
   },
   "servers": [
     {
-      "url": "http://localhost:3000",
-      "description": "Development server"
+      "url": "http://localhost:3002/api/v1",
+      "description": "Product Service - Port 3002"
     }
   ],
+  "tags": [
+    {
+      "name": "Menu Items",
+      "description": "Menu item CRUD operations"
+    },
+    {
+      "name": "Categories",
+      "description": "Category CRUD operations"
+    },
+    {
+      "name": "Stock",
+      "description": "Stock management operations"
+    },
+    {
+      "name": "Health",
+      "description": "Health check endpoint"
+    }
+  ],
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "Enter JWT token from user service"
+      }
+    },
+    "schemas": {
+      "Category": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Category unique identifier"
+          },
+          "name": {
+            "type": "string",
+            "description": "Category name",
+            "example": "Main Courses"
+          },
+          "description": {
+            "type": "string",
+            "nullable": true,
+            "description": "Category description",
+            "example": "Hearty main dishes"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Creation timestamp"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Last update timestamp"
+          }
+        }
+      },
+      "MenuItem": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Menu item unique identifier"
+          },
+          "name": {
+            "type": "string",
+            "description": "Menu item name",
+            "example": "Margherita Pizza"
+          },
+          "description": {
+            "type": "string",
+            "nullable": true,
+            "description": "Menu item description",
+            "example": "Classic tomato sauce, mozzarella, and fresh basil"
+          },
+          "price": {
+            "type": "number",
+            "format": "decimal",
+            "description": "Price in currency units",
+            "example": 14.99
+          },
+          "imageUrl": {
+            "type": "string",
+            "format": "uri",
+            "nullable": true,
+            "description": "Image URL",
+            "example": "https://example.com/pizza.jpg"
+          },
+          "stock": {
+            "type": "integer",
+            "description": "Available stock quantity",
+            "example": 50
+          },
+          "isAvailable": {
+            "type": "boolean",
+            "description": "Availability status",
+            "example": true
+          },
+          "categoryId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Category ID"
+          },
+          "category": {
+            "$ref": "#/components/schemas/Category"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Creation timestamp"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Last update timestamp"
+          }
+        }
+      },
+      "CreateCategoryRequest": {
+        "type": "object",
+        "required": [
+          "name"
+        ],
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 50,
+            "description": "Category name",
+            "example": "Appetizers"
+          },
+          "description": {
+            "type": "string",
+            "maxLength": 200,
+            "description": "Category description",
+            "example": "Starters and small bites"
+          }
+        }
+      },
+      "UpdateCategoryRequest": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 50,
+            "description": "Category name"
+          },
+          "description": {
+            "type": "string",
+            "maxLength": 200,
+            "description": "Category description"
+          }
+        }
+      },
+      "CreateMenuItemRequest": {
+        "type": "object",
+        "required": [
+          "name",
+          "price",
+          "categoryId"
+        ],
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 100,
+            "description": "Menu item name",
+            "example": "Grilled Salmon"
+          },
+          "description": {
+            "type": "string",
+            "maxLength": 500,
+            "description": "Menu item description",
+            "example": "Fresh Atlantic salmon with lemon butter sauce"
+          },
+          "price": {
+            "type": "number",
+            "minimum": 0,
+            "description": "Price",
+            "example": 24.99
+          },
+          "imageUrl": {
+            "type": "string",
+            "format": "uri",
+            "description": "Image URL",
+            "example": "https://example.com/salmon.jpg"
+          },
+          "stock": {
+            "type": "integer",
+            "minimum": 0,
+            "default": 0,
+            "description": "Stock quantity",
+            "example": 30
+          },
+          "isAvailable": {
+            "type": "boolean",
+            "default": true,
+            "description": "Availability status",
+            "example": true
+          },
+          "categoryId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Category ID"
+          }
+        }
+      },
+      "UpdateMenuItemRequest": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 100,
+            "description": "Menu item name"
+          },
+          "description": {
+            "type": "string",
+            "maxLength": 500,
+            "description": "Menu item description"
+          },
+          "price": {
+            "type": "number",
+            "minimum": 0,
+            "description": "Price"
+          },
+          "imageUrl": {
+            "type": "string",
+            "format": "uri",
+            "description": "Image URL"
+          },
+          "stock": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Stock quantity"
+          },
+          "isAvailable": {
+            "type": "boolean",
+            "description": "Availability status"
+          },
+          "categoryId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Category ID"
+          }
+        }
+      },
+      "StockOperationRequest": {
+        "type": "object",
+        "required": [
+          "items"
+        ],
+        "properties": {
+          "items": {
+            "type": "array",
+            "minItems": 1,
+            "description": "List of items to update stock",
+            "items": {
+              "type": "object",
+              "required": [
+                "menuItemId",
+                "quantity"
+              ],
+              "properties": {
+                "menuItemId": {
+                  "type": "string",
+                  "format": "uuid",
+                  "description": "Menu item ID"
+                },
+                "quantity": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "description": "Quantity to reserve/release",
+                  "example": 2
+                }
+              }
+            }
+          }
+        }
+      },
+      "SuccessResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "example": true
+          },
+          "data": {
+            "type": "object",
+            "description": "Response data"
+          }
+        }
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "example": false
+          },
+          "message": {
+            "type": "string",
+            "description": "Error message",
+            "example": "Validation failed"
+          },
+          "errors": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "field": {
+                  "type": "string",
+                  "example": "name"
+                },
+                "message": {
+                  "type": "string",
+                  "example": "Name is required"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "responses": {
+      "BadRequest": {
+        "description": "Bad Request - Validation error",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            }
+          }
+        }
+      },
+      "NotFound": {
+        "description": "Not Found",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            }
+          }
+        }
+      },
+      "Conflict": {
+        "description": "Conflict - Resource already exists",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            }
+          }
+        }
+      }
+    }
+  },
   "paths": {
+    "/categories": {
+      "get": {
+        "tags": [
+          "Categories"
+        ],
+        "summary": "Get all categories",
+        "description": "Retrieve a list of all categories ordered by name",
+        "responses": {
+          "200": {
+            "description": "List of categories",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Category"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Categories"
+        ],
+        "summary": "Create a new category",
+        "description": "Create a new category for menu items (requires authentication)",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateCategoryRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Category created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/Category"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "description": "Unauthorized - Invalid or missing token"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          }
+        }
+      }
+    },
+    "/categories/{id}": {
+      "get": {
+        "tags": [
+          "Categories"
+        ],
+        "summary": "Get category by ID",
+        "description": "Retrieve a single category with its menu items",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "description": "Category UUID",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Category details",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "allOf": [
+                        {
+                          "$ref": "#/components/schemas/Category"
+                        },
+                        {
+                          "type": "object",
+                          "properties": {
+                            "menuItems": {
+                              "type": "array",
+                              "items": {
+                                "$ref": "#/components/schemas/MenuItem"
+                              }
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Categories"
+        ],
+        "summary": "Update a category",
+        "description": "Update an existing category (requires authentication)",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "description": "Category UUID",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateCategoryRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Category updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/Category"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "description": "Unauthorized - Invalid or missing token"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Categories"
+        ],
+        "summary": "Delete a category",
+        "description": "Delete a category (only if it has no menu items, requires authentication)",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "description": "Category UUID",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Category deleted successfully"
+          },
+          "400": {
+            "description": "Cannot delete category with menu items",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - Invalid or missing token"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      }
+    },
     "/health": {
       "get": {
         "summary": "Health check endpoint",
@@ -49,8 +661,399 @@
           }
         }
       }
+    },
+    "/menu-items": {
+      "get": {
+        "tags": [
+          "Menu Items"
+        ],
+        "summary": "Get all menu items",
+        "description": "Retrieve a list of menu items with optional filtering",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "categoryId",
+            "description": "Filter by category UUID",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "in": "query",
+            "name": "isAvailable",
+            "description": "Filter by availability status",
+            "schema": {
+              "type": "boolean"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of menu items",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/MenuItem"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Menu Items"
+        ],
+        "summary": "Create a new menu item",
+        "description": "Create a new menu item in a category (requires authentication)",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateMenuItemRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Menu item created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/MenuItem"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "description": "Unauthorized - Invalid or missing token"
+          },
+          "404": {
+            "description": "Category not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/menu-items/{id}": {
+      "get": {
+        "tags": [
+          "Menu Items"
+        ],
+        "summary": "Get menu item by ID",
+        "description": "Retrieve a single menu item with its category",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "description": "Menu item UUID",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Menu item details",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/MenuItem"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Menu Items"
+        ],
+        "summary": "Update a menu item",
+        "description": "Update an existing menu item (requires authentication)",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "description": "Menu item UUID",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateMenuItemRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Menu item updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/MenuItem"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "description": "Unauthorized - Invalid or missing token"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Menu Items"
+        ],
+        "summary": "Delete a menu item",
+        "description": "Delete a menu item from the system (requires authentication)",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "description": "Menu item UUID",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Menu item deleted successfully"
+          },
+          "401": {
+            "description": "Unauthorized - Invalid or missing token"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      }
+    },
+    "/menu-items/stock/reserve": {
+      "post": {
+        "tags": [
+          "Stock"
+        ],
+        "summary": "Reserve stock for an order",
+        "description": "Decrease stock quantity for multiple menu items (used when order is placed, requires authentication)",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StockOperationRequest"
+              },
+              "example": {
+                "items": [
+                  {
+                    "menuItemId": "123e4567-e89b-12d3-a456-426614174000",
+                    "quantity": 2
+                  },
+                  {
+                    "menuItemId": "123e4567-e89b-12d3-a456-426614174001",
+                    "quantity": 1
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Stock reserved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Stock reserved"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Insufficient stock or validation error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - Invalid or missing token"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      }
+    },
+    "/menu-items/stock/release": {
+      "post": {
+        "tags": [
+          "Stock"
+        ],
+        "summary": "Release reserved stock",
+        "description": "Increase stock quantity for multiple menu items (used when order is cancelled, requires authentication)",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StockOperationRequest"
+              },
+              "example": {
+                "items": [
+                  {
+                    "menuItemId": "123e4567-e89b-12d3-a456-426614174000",
+                    "quantity": 2
+                  },
+                  {
+                    "menuItemId": "123e4567-e89b-12d3-a456-426614174001",
+                    "quantity": 1
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Stock released successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Stock released"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "description": "Unauthorized - Invalid or missing token"
+          }
+        }
+      }
     }
-  },
-  "components": {},
-  "tags": []
+  }
 }

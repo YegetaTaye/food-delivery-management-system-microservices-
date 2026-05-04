@@ -1,16 +1,16 @@
 {
   "openapi": "3.0.0",
   "info": {
-    "title": "MicroserviceName",
+    "title": "notification-service",
     "version": "1.0.0",
-    "description": "MicroserviceName API Documentation",
+    "description": "notification-service API Documentation",
     "contact": {
       "name": "API Support"
     }
   },
   "servers": [
     {
-      "url": "http://localhost:3000",
+      "url": "http://localhost:8087",
       "description": "Development server"
     }
   ],

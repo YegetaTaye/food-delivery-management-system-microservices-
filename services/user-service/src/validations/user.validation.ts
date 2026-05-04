@@ -15,7 +15,8 @@ export const createUserSchema = Joi.object({
     'string.empty': 'Password is required',
     'string.min': 'Password must be at least 8 characters long',
     'string.max': 'Password must not exceed 100 characters'
-  })
+  }),
+  role: Joi.string().valid('USER', 'ADMIN').optional()
 });
 
 export const updateUserSchema = Joi.object({
@@ -30,7 +31,8 @@ export const updateUserSchema = Joi.object({
   password: Joi.string().min(8).max(100).optional().messages({
     'string.min': 'Password must be at least 8 characters long',
     'string.max': 'Password must not exceed 100 characters'
-  })
+  }),
+  role: Joi.string().valid('USER', 'ADMIN').optional()
 }).min(1).messages({
   'object.min': 'At least one field must be provided for update'
 });

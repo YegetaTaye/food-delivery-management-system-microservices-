@@ -14,6 +14,7 @@ import { BrowserRouter } from 'react-router-dom';
 import App from './App';
 import { AuthProvider } from './context/AuthContext';
 import { CartProvider } from './context/CartContext';
+import { SearchProvider } from './context/SearchContext';
 import './styles/global.css';
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
@@ -21,7 +22,9 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
     <BrowserRouter>
       <AuthProvider>
         <CartProvider>
-          <App />
+          <SearchProvider>
+            <App />
+          </SearchProvider>
         </CartProvider>
       </AuthProvider>
     </BrowserRouter>

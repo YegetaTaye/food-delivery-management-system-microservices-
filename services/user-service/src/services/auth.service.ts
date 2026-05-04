@@ -24,6 +24,7 @@ export class AuthService {
       id: user.id,
       name: user.name,
       email: user.email,
+      role: user.role,
       createdAt: user.createdAt
     };
   }
@@ -50,14 +51,16 @@ export class AuthService {
         id: crypto.randomUUID(),
         name: data.name,
         email: data.email,
-        passwordHash
+        passwordHash,
+        role: data.role || 'USER'
       }
     });
 
     // Generate tokens
     const payload: JwtPayload = {
       userId: user.id,
-      email: user.email
+      email: user.email,
+      role: user.role
     };
 
     const accessToken = JwtUtil.generateAccessToken(payload);
@@ -93,7 +96,8 @@ export class AuthService {
     // Generate tokens
     const payload: JwtPayload = {
       userId: user.id,
-      email: user.email
+      email: user.email,
+      role: user.role
     };
 
     const accessToken = JwtUtil.generateAccessToken(payload);
@@ -126,7 +130,8 @@ export class AuthService {
       // Generate new access token
       const newPayload: JwtPayload = {
         userId: user.id,
-        email: user.email
+        email: user.email,
+        role: user.role
       };
 
       const accessToken = JwtUtil.generateAccessToken(newPayload);

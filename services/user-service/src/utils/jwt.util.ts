@@ -4,10 +4,11 @@ import { config } from '../config/env';
 export interface JwtPayload {
   userId: string;
   email: string;
+  role: string;
 }
 
 export class JwtUtil {
-  private static readonly SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
+  private static readonly SECRET = process.env.JWT_SECRET || 'foodflow-secret-key-2024-dev';
   private static readonly EXPIRES_IN = process.env.JWT_EXPIRES_IN || '7d';
   private static readonly REFRESH_EXPIRES_IN = process.env.JWT_REFRESH_EXPIRES_IN || '30d';
 

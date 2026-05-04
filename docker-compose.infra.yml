@@ -1,0 +1,32 @@
+version: '3.8'
+
+services:
+  # Message Queue for Event-Driven Communication
+  rabbitmq:
+    image: rabbitmq:3.13-management
+    ports:
+      - "5672:5672"   # AMQP
+      - "15672:15672" # Management UI
+    environment:
+      RABBITMQ_DEFAULT_USER: admin
+      RABBITMQ_DEFAULT_PASS: admin123
+
+  # Shared Database (Services use different databases within this instance)
+  mysql:
+    image: mysql:8.0
+    ports:
+      - "3306:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: root_password
+      MYSQL_DATABASE: foodflow_main
+    volumes:
+      - mysql_data:/var/lib/mysql
+
+  # Redis for Cart Service
+  redis:
+    image: redis:alpine
+    ports:
+      - "6379:6379"
+
+volumes:
+  mysql_data:

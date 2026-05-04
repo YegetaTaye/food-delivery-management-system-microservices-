@@ -13,6 +13,7 @@ export interface User {
   id: string;
   email: string;
   name: string;
+  role?: 'USER' | 'ADMIN';
   createdAt: string;
 }
 
@@ -153,5 +154,44 @@ export interface Notification {
   message: string;
   createdAt: string;
   metadata?: Record<string, any>;
+}
+
+// ============================================
+// System & DevSecOps Types
+// ============================================
+
+export interface ServiceHealth {
+  name: string;
+  status: 'UP' | 'DOWN' | 'DEGRADED';
+  version: string;
+  uptime: string;
+  lastChecked: string;
+}
+
+export interface SecurityEvent {
+  id: string;
+  type: 'AUTH' | 'PAYMENT' | 'ACCESS' | 'SYSTEM';
+  severity: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
+  message: string;
+  timestamp: string;
+  metadata?: Record<string, any>;
+}
+
+export interface SessionInfo {
+  id: string;
+  device: string;
+  browser: string;
+  ipAddress: string;
+  location: string;
+  lastActive: string;
+  isCurrent: boolean;
+}
+
+export interface SystemMetrics {
+  activeUsers: number;
+  ordersPerMinute: number;
+  averageResponseTime: number;
+  securityScansPassed: boolean;
+  activeDeployments: number;
 }
 

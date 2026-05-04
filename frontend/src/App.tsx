@@ -13,28 +13,52 @@
 import { Routes, Route, Navigate } from "react-router-dom";
 import { useAuth } from "./context/AuthContext";
 import Layout from "./components/Layout";
+import AdminLayout from "./components/AdminLayout";
 import LoginPage from "./pages/LoginPage";
 import SignupPage from "./pages/SignupPage";
 import ProductsPage from "./pages/ProductsPage";
+import ProductDetailPage from "./pages/ProductDetailPage";
 import CartPage from "./pages/CartPage";
 import CheckoutPage from "./pages/CheckoutPage";
 import ConfirmationPage from "./pages/ConfirmationPage";
 import OrdersPage from "./pages/OrdersPage";
 import NotificationsPage from "./pages/NotificationsPage";
+import SystemStatusPage from "./pages/SystemStatusPage";
+import ProfilePage from "./pages/ProfilePage";
+import AdminUsersPage from "./pages/AdminUsersPage";
+import AdminOrdersPage from "./pages/AdminOrdersPage";
+import AdminProductsPage from "./pages/AdminProductsPage";
+import AdminSecurityPage from "./pages/AdminSecurityPage";
 
 /**
  * ProtectedRoute - Guards routes that require authentication
- * Redirects to login if user is not authenticated
  */
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isLoading } = useAuth();
 
   if (isLoading) {
-    return <div className="loading-screen">Loading...</div>;
+    return <div className="loading-screen">Loading Sanctuary...</div>;
   }
 
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />;
+  }
+
+  return <>{children}</>;
+}
+
+/**
+ * AdminRoute - Guards routes that require ADMIN privileges
+ */
+function AdminRoute({ children }: { children: React.ReactNode }) {
+  const { user, isAuthenticated, isLoading } = useAuth();
+
+  if (isLoading) {
+    return <div className="loading-screen">Verifying Clearances...</div>;
+  }
+
+  if (!isAuthenticated || user?.role !== 'ADMIN') {
+    return <Navigate to="/products" replace />;
   }
 
   return <>{children}</>;
@@ -47,7 +71,24 @@ export default function App() {
       <Route path="/login" element={<LoginPage />} />
       <Route path="/signup" element={<SignupPage />} />
 
-      {/* Protected Routes - Require JWT Authentication */}
+      {/* Admin Dashboard Routes - Dedicated Command Center */}
+      <Route
+        path="/admin"
+        element={
+          <AdminRoute>
+            <AdminLayout />
+          </AdminRoute>
+        }
+      >
+        <Route index element={<Navigate to="/admin/status" replace />} />
+        <Route path="status" element={<SystemStatusPage />} />
+        <Route path="users" element={<AdminUsersPage />} />
+        <Route path="orders" element={<AdminOrdersPage />} />
+        <Route path="products" element={<AdminProductsPage />} />
+        <Route path="security" element={<AdminSecurityPage />} />
+      </Route>
+
+      {/* Customer Interface Routes - Quiet Luxury Shell */}
       <Route
         path="/"
         element={
@@ -56,24 +97,15 @@ export default function App() {
           </ProtectedRoute>
         }
       >
-        {/* Product Browsing - Fetches from Product Service via API Gateway */}
         <Route index element={<Navigate to="/products" replace />} />
         <Route path="products" element={<ProductsPage />} />
-
-        {/* Cart Management - Frontend-only state, no backend calls */}
+        <Route path="products/:id" element={<ProductDetailPage />} />
         <Route path="cart" element={<CartPage />} />
-
-        {/* Checkout Flow - Creates order via Order Service */}
         <Route path="checkout" element={<CheckoutPage />} />
-
-        {/* Order Confirmation - Displays order & payment status */}
         <Route path="confirmation/:orderId" element={<ConfirmationPage />} />
-
-        {/* Order History - Fetches from Order Service */}
         <Route path="orders" element={<OrdersPage />} />
-
-        {/* Notifications - Fetches from Notification Service */}
         <Route path="notifications" element={<NotificationsPage />} />
+        <Route path="profile" element={<ProfilePage />} />
       </Route>
 
       {/* Fallback */}

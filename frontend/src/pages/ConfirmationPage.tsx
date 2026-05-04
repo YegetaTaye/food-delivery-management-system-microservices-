@@ -1,26 +1,3 @@
-/**
- * Confirmation Page
- *
- * Displays order confirmation after successful checkout.
- *
- * API Integration:
- * - GET /api/v1/orders/:orderId → Order Service
- *
- * This page shows:
- * - Order ID
- * - Order status (updated by backend events)
- * - Payment status
- * - Order items
- *
- * Backend Event Flow (happens async, frontend shows results):
- * 1. orders.created → Product Service reserves stock
- * 2. payments.completed → Order Service updates status to PAID
- * 3. payments.completed → Notification Service sends confirmation email
- * 4. notification.sent → (Optional) Analytics Service logs event
- *
- * Note: Frontend only consumes HTTP responses, not events directly.
- * The order status reflects the cumulative effect of these events.
- */
 import { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import { ordersApi } from "../services/api";
@@ -53,151 +30,147 @@ export default function ConfirmationPage() {
 
   if (isLoading) {
     return (
-      <div className="page-loading">
-        <div className="loading-spinner" />
-        <p>Loading order details...</p>
+      <div className="page-loading-customer glass">
+        <div className="loading-spinner large" />
+        <p>Confirming your culinary journey...</p>
       </div>
     );
   }
 
   if (error || !order) {
     return (
-      <div className="page-error">
-        <h2>Error</h2>
-        <p>{error || "Order not found"}</p>
-        <Link to="/products" className="btn btn-primary">
-          Continue Shopping
+      <div className="page-error-customer glass container">
+        <div className="error-icon">⚠️</div>
+        <h2>Oops! Something went wrong</h2>
+        <p>{error || "We couldn't find your order details."}</p>
+        <Link to="/products" className="btn-customer-primary">
+          Back to Menu
         </Link>
       </div>
     );
   }
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "PAID":
-      case "CONFIRMED":
-      case "DELIVERED":
-        return "success";
-      case "PENDING":
-      case "PREPARING":
-      case "ASSIGNED":
-      case "OUT_FOR_DELIVERY":
-        return "warning";
-      case "CANCELLED":
-        return "error";
-      default:
-        return "default";
-    }
-  };
-
   return (
-    <div className="confirmation-page">
-      <div className="confirmation-header">
-        <div className="success-icon">✓</div>
-        <h1>Order Confirmed!</h1>
-        <p className="confirmation-subtitle">
-          Thank you for your order. We're preparing it now.
-        </p>
-      </div>
+    <div className="confirmation-page-v2 container fade-in">
+      <div className="confirmation-card glass">
+        <div className="success-header">
+          <div className="success-check-lottie">✓</div>
+          <h1 className="welcome-text">Order Confirmed!</h1>
+          <p className="order-subtitle">We've received your order and we're already firing up the kitchen.</p>
+        </div>
 
-      {/* Service indicator */}
-      <div className="service-indicator">
-        <span className="service-badge">Order Service</span>
-        <span className="endpoint-badge">GET /api/v1/orders/{orderId}</span>
-      </div>
-
-      {/* Event flow visualization */}
-      <div className="event-flow-container">
-        <h3>Backend Event Flow</h3>
-        <div className="event-flow">
-          <div className="event-item completed">
-            <span className="event-icon">📝</span>
-            <span className="event-name">orders.created</span>
-            <span className="event-status">✓</span>
+        <div className="order-tracking-mini">
+          <div className="track-step active">
+            <div className="step-dot"></div>
+            <span>Confirmed</span>
           </div>
-          <span className="event-arrow">→</span>
-          <div
-            className={`event-item ${order.status !== "PENDING" ? "completed" : "pending"}`}
-          >
-            <span className="event-icon">💳</span>
-            <span className="event-name">payments.completed</span>
-            <span className="event-status">
-              {order.status !== "PENDING" ? "✓" : "..."}
-            </span>
+          <div className="track-line active"></div>
+          <div className="track-step pending">
+            <div className="step-dot"></div>
+            <span>Preparing</span>
           </div>
-          <span className="event-arrow">→</span>
-          <div
-            className={`event-item ${order.status !== "PENDING" ? "completed" : "pending"}`}
-          >
-            <span className="event-icon">✉️</span>
-            <span className="event-name">notification.sent</span>
-            <span className="event-status">
-              {order.status !== "PENDING" ? "✓" : "..."}
-            </span>
+          <div className="track-line"></div>
+          <div className="track-step pending">
+            <div className="step-dot"></div>
+            <span>On the way</span>
           </div>
         </div>
-        <p className="event-note">
-          These events are processed asynchronously by the backend
-          microservices.
-        </p>
-      </div>
 
-      <div className="confirmation-content">
-        <div className="order-card">
-          <div className="order-card-header">
-            <div>
-              <span className="order-label">Order ID</span>
-              <span className="order-id">{order.id}</span>
-            </div>
-            <span className={`status-badge ${getStatusColor(order.status)}`}>
-              {order.status}
-            </span>
+        <div className="order-id-badge">
+          <span>Order Reference: </span>
+          <span className="id-text">{order.id.split('-')[0].toUpperCase()}</span>
+        </div>
+
+        <div className="confirmation-details-grid">
+          <div className="details-section">
+            <h3>Delivery To</h3>
+            <p className="detail-text">123 Food Street, Digital City</p>
+            <p className="detail-subtext">Estimated delivery: 25-35 mins</p>
           </div>
-
-          <div className="order-details">
-            <div className="detail-row">
-              <span className="detail-label">Order Date</span>
-              <span className="detail-value">
-                {new Date(order.createdAt).toLocaleString()}
-              </span>
-            </div>
-            <div className="detail-row">
-              <span className="detail-label">Items</span>
-              <span className="detail-value">
-                {order.orderItems.length} items
-              </span>
-            </div>
-            <div className="detail-row total">
-              <span className="detail-label">Total</span>
-              <span className="detail-value">
-                ${order.totalAmount.toFixed(2)}
-              </span>
-            </div>
-          </div>
-
-          <div className="order-items-list">
-            <h3>Order Items</h3>
-            {order.orderItems.map((item, index) => (
-              <div key={index} className="order-item-row">
-                <span className="item-qty">{item.quantity}×</span>
-                <span className="item-name">{item.productName}</span>
-                <span className="item-price">
-                  ${(item.price * item.quantity).toFixed(2)}
-                </span>
+          <div className="details-section">
+            <h3>Summary</h3>
+            <div className="summary-list">
+              {order.orderItems.map((item, i) => (
+                <div key={i} className="summary-item">
+                  <span>{item.quantity}x {item.productName}</span>
+                  <span>${(item.price * item.quantity).toFixed(2)}</span>
+                </div>
+              ))}
+              <div className="summary-total-v2">
+                <span>Total Paid</span>
+                <span className="total-price">${order.totalAmount.toFixed(2)}</span>
               </div>
-            ))}
+            </div>
           </div>
         </div>
 
-        <div className="confirmation-actions">
-          <Link to="/orders" className="btn btn-secondary">
-            View All Orders
-          </Link>
-          <Link to="/products" className="btn btn-primary">
-            Continue Shopping
-          </Link>
+        <div className="confirmation-footer">
+          <Link to="/orders" className="btn-customer-secondary">Track Detailed Order</Link>
+          <Link to="/products" className="btn-customer-primary">Order More Food</Link>
         </div>
       </div>
+
+      <style>{`
+        .confirmation-page-v2 { padding: 4rem 0; display: flex; justify-content: center; }
+        .confirmation-card { max-width: 700px; width: 100%; padding: 4rem; text-align: center; border-radius: 32px !important; }
+        
+        .success-check-lottie {
+          width: 80px; height: 80px; background: var(--accent-primary);
+          color: #000; font-size: 3rem; font-weight: 900;
+          display: flex; align-items: center; justify-content: center;
+          border-radius: 99px; margin: 0 auto 2rem;
+          box-shadow: 0 0 40px rgba(0, 212, 170, 0.3);
+        }
+        
+        .order-subtitle { color: #94a3b8; margin-bottom: 3rem; }
+        
+        .order-tracking-mini {
+          display: flex; align-items: center; justify-content: center;
+          gap: 0.5rem; margin-bottom: 3rem;
+        }
+        .track-step { display: flex; flex-direction: column; align-items: center; gap: 0.5rem; font-size: 0.75rem; font-weight: 700; }
+        .step-dot { width: 12px; height: 12px; border-radius: 99px; background: #1e293b; border: 2px solid #334155; }
+        .track-step.active { color: var(--accent-primary); }
+        .track-step.active .step-dot { background: var(--accent-primary); border-color: var(--accent-primary); box-shadow: 0 0 10px var(--accent-primary); }
+        .track-line { flex: 1; max-width: 60px; height: 2px; background: #1e293b; }
+        .track-line.active { background: var(--accent-primary); }
+        
+        .order-id-badge {
+          background: rgba(255,255,255,0.03); padding: 0.75rem 1.5rem;
+          border-radius: 99px; display: inline-block; margin-bottom: 3rem;
+          font-size: 0.85rem; color: #64748b; border: 1px solid rgba(255,255,255,0.05);
+        }
+        .id-text { color: #fff; font-weight: 800; letter-spacing: 1px; }
+        
+        .confirmation-details-grid {
+          display: grid; grid-template-columns: 1fr 1fr; gap: 2rem;
+          text-align: left; border-top: 1px solid rgba(255,255,255,0.05);
+          padding-top: 3rem; margin-bottom: 3rem;
+        }
+        .details-section h3 { font-size: 0.9rem; font-weight: 800; color: #fff; margin-bottom: 1rem; text-transform: uppercase; letter-spacing: 1px; }
+        .detail-text { color: #fff; font-weight: 600; margin-bottom: 0.25rem; }
+        .detail-subtext { color: #64748b; font-size: 0.8rem; }
+        
+        .summary-list { display: flex; flex-direction: column; gap: 0.5rem; }
+        .summary-item { display: flex; justify-content: space-between; font-size: 0.85rem; color: #94a3b8; }
+        .summary-total-v2 {
+          display: flex; justify-content: space-between; margin-top: 1rem;
+          padding-top: 1rem; border-top: 1px dashed rgba(255,255,255,0.1);
+          color: #fff; font-weight: 800;
+        }
+        .total-price { color: var(--accent-primary); font-size: 1.25rem; }
+        
+        .confirmation-footer { display: flex; gap: 1rem; }
+        .btn-customer-secondary {
+          flex: 1; padding: 1rem; background: rgba(255,255,255,0.05);
+          color: #fff; border-radius: 14px; text-decoration: none;
+          font-weight: 700; transition: all 0.2s;
+        }
+        .btn-customer-secondary:hover { background: rgba(255,255,255,0.1); }
+        .btn-customer-primary { flex: 1; text-decoration: none; display: flex; align-items: center; justify-content: center; }
+        
+        .page-loading-customer { height: 60vh; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1.5rem; color: #94a3b8; }
+      `}</style>
     </div>
   );
 }

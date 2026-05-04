@@ -85,6 +85,7 @@ export class OrderController {
   static async getOrders(req: AuthRequest, res: Response): Promise<void> {
     try {
       const userId = req.user?.userId;
+      const role = req.user?.role;
 
       if (!userId) {
         res.status(401).json({
@@ -94,7 +95,10 @@ export class OrderController {
         return;
       }
 
-      const orders = await OrderService.getOrders(userId);
+      // Admin can see all orders, others only their own
+      const orders = role === 'ADMIN' 
+        ? await OrderService.getAllOrders() 
+        : await OrderService.getOrders(userId);
 
       res.status(200).json({
         success: true,

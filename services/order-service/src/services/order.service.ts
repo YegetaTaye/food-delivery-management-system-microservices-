@@ -134,6 +134,19 @@ export class OrderService {
     }
   }
 
+  static async getAllOrders() {
+    try {
+      const orders = await prisma.order.findMany({
+        include: { orderItems: true },
+        orderBy: { createdAt: 'desc' },
+      });
+      return orders;
+    } catch (error: any) {
+      logger.error('Error fetching all orders:', error);
+      throw error;
+    }
+  }
+
   static async getOrders(userId: string) {
     try {
       const orders = await prisma.order.findMany({

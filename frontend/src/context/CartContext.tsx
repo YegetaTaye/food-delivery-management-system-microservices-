@@ -44,11 +44,21 @@ const CartContext = createContext<CartContextType | undefined>(undefined);
 
 export function CartProvider({ children }: { children: React.ReactNode }) {
   /**
-   * Cart state - stored in memory only
-   * This state is NOT persisted to any backend service
-   * Resets when page is refreshed or browser is closed
+   * Cart state - persisted to localStorage
    */
-  const [items, setItems] = useState<CartItem[]>([]);
+  const [items, setItems] = useState<CartItem[]>(() => {
+    const saved = localStorage.getItem('foodflow_cart');
+    try {
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
+
+  // Persist cart to localStorage on change
+  React.useEffect(() => {
+    localStorage.setItem('foodflow_cart', JSON.stringify(items));
+  }, [items]);
 
   /**
    * Add product to cart

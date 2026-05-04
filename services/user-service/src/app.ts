@@ -58,8 +58,8 @@ class App {
     this.app.use('/', healthRoute);
     
     // API routes
-    this.app.use('/api/auth', authRoutes);
-    this.app.use('/api/users', userRoutes);
+    this.app.use('/api/v1/auth', authRoutes);
+    this.app.use('/api/v1/users', userRoutes);
     
     // Swagger documentation
     this.app.use('/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
